@@ -5,7 +5,8 @@ data
 data/
 cache/
 results/
-
+images/
+images
 *.swp
 
 *.pyc
