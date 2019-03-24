@@ -11,7 +11,7 @@ from .kp_utils import make_kp_layer
 from .kp_utils import make_pool_layer, make_unpool_layer
 from .kp_utils import make_merge_layer, make_inter_layer, make_cnv_layer
 from .kp_utils import _h_aggregate, _v_aggregate
-from utils.debugger import Debugger
+from utils.debugger import Debugger # yezheng: where is this one? -- in the ROOT directory
 
 class kp_module(nn.Module):
     def __init__(
@@ -64,6 +64,7 @@ class kp_module(nn.Module):
         self.merge = make_merge_layer(curr_dim)
 
     def forward(self, x):
+        # print("[kp_module forward]")# yezheng: this seems to be ok
         up1  = self.up1(x)
         max1 = self.max1(x)
         low1 = self.low1(max1)
@@ -221,6 +222,7 @@ class exkp(nn.Module):
         return outs
 
     def _test(self, *xs, **kwargs):
+
         image = xs[0]
 
         inter = self.pre(image)
@@ -256,12 +258,15 @@ class exkp(nn.Module):
                 inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
                 inter = self.relu(inter)
                 inter = self.inters[ind](inter)
+        print("[exkp _test] image",image.shape)
+        print("[exkp _test] kwargs",kwargs)
         if kwargs['debug']:
             _debug(image, t_heat, l_heat, b_heat, r_heat, ct_heat)
         del kwargs['debug']
         return self._decode(*outs[-9:], **kwargs)
 
     def forward(self, *xs, **kwargs):
+        print("[exkp forward] xs", len(xs))# yezheng: this seems to be ok
         if len(xs) > 1:
             return self._train(*xs, **kwargs)
         return self._test(*xs, **kwargs)
@@ -372,4 +377,6 @@ def _debug(image, t_heat, l_heat, b_heat, r_heat, ct_heat):
         # debugger.add_blend_img(img, r_hm, 'r_hm')
         debugger.add_blend_img(img, hms, 'extreme')
         debugger.add_blend_img(img, ct_hm, 'center')
-    debugger.show_all_imgs(pause=False)
+    
+    # debugger.show_all_imgs(pause=False) #yezheng: get rid of this one
+    # print("[_debug]")

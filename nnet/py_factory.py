@@ -33,13 +33,13 @@ class DummyModule(nn.Module):
 class NetworkFactory(object):
     def __init__(self, db):
         super(NetworkFactory, self).__init__()
-
+        print("[NetworkFactory __init__] db", db )
         module_file = "models.{}".format(system_configs.snapshot_name)
-        print("module_file: {}".format(module_file))
+        print("[NetworkFactory __init__] module_file: {}".format(module_file))
         nnet_module = importlib.import_module(module_file)
-
+        print("[NetworkFactory __init__] nnet_module", nnet_module)
         self.model   = DummyModule(nnet_module.model(db))
-        self.loss    = nnet_module.loss
+        self.loss    = nnet_module.loss # yezheng: this is last line in models/ExtremeNet.py
         self.network = Network(self.model, self.loss)
         self.network = DataParallel(self.network, chunk_sizes=system_configs.chunk_sizes)
 
@@ -74,8 +74,9 @@ class NetworkFactory(object):
         self.network.eval()
 
     def train(self, xs, ys, **kwargs):
-        xs = [x.cuda(non_blocking=True) for x in xs]
-        ys = [y.cuda(non_blocking=True) for y in ys]
+        if torch.cuda.is_available():
+            xs = [x.cuda(non_blocking=True) for x in xs]
+            ys = [y.cuda(non_blocking=True) for y in ys]
 
         self.optimizer.zero_grad()
         loss = self.network(xs, ys)
@@ -94,9 +95,14 @@ class NetworkFactory(object):
             return loss
 
     def test(self, xs, **kwargs):
+        
         with torch.no_grad():
-            xs = [x.cuda(non_blocking=True) for x in xs]
+            if torch.cuda.is_available():
+                xs = [x.cuda(non_blocking=True) for x in xs]
+            print("[NetworkFactory test] list len(xs)", len(xs),
+                "xs[0]",xs[0].shape, type(xs[0]) )#, "self.model", self.model)
             return self.model(*xs, **kwargs)
+
 
     def set_lr(self, lr):
         print("setting learning rate to: {}".format(lr))
@@ -106,14 +112,20 @@ class NetworkFactory(object):
     def load_pretrained_params(self, pretrained_model):
         print("loading from {}".format(pretrained_model))
         with open(pretrained_model, "rb") as f:
-            params = torch.load(f)
+            if torch.cuda.is_available():
+                params = torch.load(f)
+            else:
+                params = torch.load(f, map_location = 'cpu')
             self.model.load_state_dict(params, strict=False)
 
     def load_params(self, iteration):
         cache_file = system_configs.snapshot_file.format(iteration)
         print("loading model from {}".format(cache_file))
         with open(cache_file, "rb") as f:
-            params = torch.load(f)
+            if torch.cuda.is_available():
+                params = torch.load(f)
+            else:
+                params = torch.load(f, map_location = 'cpu')
             self.model.load_state_dict(params)
 
     def save_params(self, iteration):

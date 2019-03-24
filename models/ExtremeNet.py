@@ -26,5 +26,5 @@ class model(exkp):
             make_hg_layer=make_hg_layer,
             kp_layer=residual, cnv_dim=256
         )
-
+# if "__main__" == __name__:
 loss = CTLoss(focal_loss=_neg_loss)

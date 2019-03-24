@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument("--cfg_file", help="config file", 
                         default='ExtremeNet', type=str)
     parser.add_argument("--demo", help="demo image path or folders",
-                        default="", type=str)
+                        default="images", type=str)
     parser.add_argument("--model_path",
                         default='cache/ExtremeNet_250000.pkl')
     parser.add_argument("--show_mask", action='store_true',
@@ -105,7 +105,8 @@ if __name__ == "__main__":
     nnet = NetworkFactory(None)
     print("loading parameters...")
     nnet.load_pretrained_params(args.model_path)
-    nnet.cuda()
+    if torch.cuda.is_available():
+        nnet.cuda()
     nnet.eval_mode()
 
     K             = configs["db"]["top_k"]
@@ -142,7 +143,8 @@ if __name__ == "__main__":
                 image_names.append(os.path.join(args.demo, file_name))
     else:
         image_names = [args.demo]
-    print("[demo] image_names", image_names, "args.demo", args.demo)
+    # print("[demo] image_names", image_names, "args.demo", args.demo,
+    #     "os.path.isdir(args.demo)", os.path.isdir(args.demo),"args", args)
     for image_id, image_name in enumerate(image_names):
         print('Running ', image_name)
         image      = cv2.imread(image_name)
@@ -182,10 +184,12 @@ if __name__ == "__main__":
 
             images = np.concatenate((images, images[:, :, :, ::-1]), axis=0)
             images = torch.from_numpy(images)
+            print("[demo] scales", scales)
             dets   = kp_decode(
                 nnet, images, K, aggr_weight=aggr_weight, 
                 scores_thresh=scores_thresh, center_thresh=center_thresh,
                 kernel=nms_kernel, debug=True)
+            
             dets   = dets.reshape(2, -1, 14)
             dets[1, :, [0, 2]] = out_width - dets[1, :, [2, 0]]
             dets[1, :, [5, 7, 9, 11]] = out_width - dets[1, :, [5, 7, 9, 11]]
@@ -264,8 +268,7 @@ if __name__ == "__main__":
                                       bbox[2] - bbox[0], bbox[3] - bbox[1]))
                     image = vis_class(image, 
                                       (bbox[0], bbox[1] - 2), txt)
-                    image = vis_octagon(
-                        image, ex, color_mask)
+                    image = vis_octagon( image, ex, color_mask)
                     image = vis_ex(image, ex, color_mask)
 
                     if args.show_mask:
@@ -278,11 +281,11 @@ if __name__ == "__main__":
                         mask_image = vis_class(mask_image, 
                                                (bbox[0], bbox[1] - 2), txt)
                         mask_image = vis_mask(mask_image, mask, color_mask)
-
+            #yezheng: comment out
             if args.show_mask:
                 cv2.imshow('mask', mask_image)
             cv2.imshow('out', image)
-            cv2.waitKey()
+            # cv2.waitKey()
 
 
 
