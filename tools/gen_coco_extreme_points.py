@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import pickle
 import json
-SPLITS = ['val', 'train']
+SPLITS = ['train']#'val', 
 ANN_PATH = '../data/coco/annotations/instances_{}2017.json'
 OUT_PATH = '../data/coco/annotations/instances_extreme_{}2017.json'
 IMG_DIR = '../data/coco/{}2017/'
