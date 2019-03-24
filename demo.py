@@ -285,7 +285,7 @@ if __name__ == "__main__":
             if args.show_mask:
                 cv2.imshow('mask', mask_image)
             cv2.imshow('out', image)
-            # cv2.waitKey()
+            cv2.waitKey()
 
 
 
