@@ -142,7 +142,7 @@ if __name__ == "__main__":
                 image_names.append(os.path.join(args.demo, file_name))
     else:
         image_names = [args.demo]
-
+    print("[demo] image_names", image_names, "args.demo", args.demo)
     for image_id, image_name in enumerate(image_names):
         print('Running ', image_name)
         image      = cv2.imread(image_name)
