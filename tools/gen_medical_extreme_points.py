@@ -1,10 +1,11 @@
 import glob, os, cv2
 import numpy as np
 import json,tqdm
-
+import copy
 import numpy as np                                 # (pip install numpy)
 from skimage import measure                        # (pip install scikit-image)
 from shapely.geometry import Polygon, MultiPolygon # (pip install Shapely)
+
 
 def _get_extreme_points(pts):
   l, t = min(pts[:, 0]), min(pts[:, 1])
@@ -116,33 +117,39 @@ if '__main__' == __name__:
 	if not os.path.exists(output_file):
 		print("NOT EXIST, to create one")
 		os.makedirs(output_file)
-	output_file = os.path.join(output_file,"instances_extreme_train2017.json")
+	output_file_extreme = os.path.join(output_file,"instances_extreme_train2017.json")
+	output_file_init = os.path.join(output_file,"instances_train2017.json")
+	del output_file
 
 	labels_list_to_check = [3,4]
-	data = {"annotations":[],"images":[],"categories": []}
+	data_extreme = {"annotations":[],"images":[],"categories": []}
+
 	# for label in labels_list_to_check:
-	data["categories"].append({"id":3,"name":"spin_cord", "supercategory":"spin_cord"})
-	data["categories"].append({"id":4,"name":"probe_right", "supercategory":"probe_right"})
+	data_extreme["categories"].append({"id":3,"name":"spin_cord", "supercategory":"spin_cord"})
+	data_extreme["categories"].append({"id":4,"name":"probe_right", "supercategory":"probe_right"})
 	
 	mask_list = glob.glob('../../../medical_img/data/test/mask_label/*.png')
 	# print("mask_list", mask_list)
 	mask_list = [m for m in mask_list if "corrected" not in m]
 	mask_list.sort()
 	annotation_id = 1 
+	data_init = copy.deepcopy(data_extreme)
 	for i in tqdm.tqdm(range(len(mask_list))):
 		mask_name = mask_list[i]
 		splits = mask_name.split('/')[-1].split('_')[0]#[:-4].split('_')[0].split('e')
 		index = int(''.join([s for s in splits if s.isdigit()]))
 		# mask = cv2.imread(mask_name,0)#.astype(np.float64)
 		
-		img_origin_directory = "/home/zhang7/medical_img/data/test/img"
+		img_origin_directory = "/home/yezheng/medical_img/data/test/img"
 		img_origin = cv2.imread(os.path.join(img_origin_directory, 
 			"{:06d}.jpg".format(index) ) )
 		if None is img_origin:
 			mask_directory = "/Users/yezheng/medical_img/data/test/img"
 			img_origin = cv2.imread(os.path.join(img_origin_directory, 
 			"{:06d}.jpg".format(index) ) )
-		data["images"].append({"file_name":os.path.join(img_origin_directory, 
+		data_extreme["images"].append({"file_name":os.path.join(img_origin_directory, 
+			"{:06d}.jpg".format(index) ),"id":index})
+		data_init["images"].append({"file_name":os.path.join(img_origin_directory, 
 			"{:06d}.jpg".format(index) ),"id":index})
 
 		# mask_corrected = np.zeros(mask.shape)
@@ -159,10 +166,13 @@ if '__main__' == __name__:
 			tmp = np.where(mask_corrected > 0)
 			pts = np.asarray(tmp).transpose()[:, ::-1].astype(np.int32)
 			extreme_points = _get_extreme_points(pts).astype(np.int32)
+			data_init['annotations'].append(ann)
 			ann['extreme_points'] = extreme_points.copy().tolist()
-			data['annotations'].append(ann)
+			data_extreme['annotations'].append(ann)
+			del ann
 			
-	json.dump(data, open(output_file, 'w'))
+	json.dump(data_extreme, open(output_file_extreme, 'w'))
+	json.dump(data_init, open(output_file_init, 'w'))
 	
 
 # if __name__ == '__main__':	

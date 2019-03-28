@@ -8,7 +8,7 @@ class Config:
         self._configs["sampling_function"] = "kp_detection"
 
         # Training Config
-        self._configs["display"]           = 5
+        self._configs["display"]           = 10
         self._configs["snapshot"]          = 5000
         self._configs["stepsize"]          = 450000
         self._configs["learning_rate"]     = 0.00025

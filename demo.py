@@ -44,11 +44,11 @@ image_ext = ['jpg', 'jpeg', 'png', 'webp']
 def parse_args():
     parser = argparse.ArgumentParser(description="Demo CornerNet")
     parser.add_argument("--cfg_file", help="config file", 
-                        default='ExtremeNet', type=str)
+                        default='medical_ExtremeNet', type=str)
     parser.add_argument("--demo", help="demo image path or folders",
-                        default="images", type=str)
+                        default="data/medical_img/test2017", type=str)
     parser.add_argument("--model_path",
-                        default='cache/ExtremeNet_250000.pkl')
+                        default='cache/medical_ExtremeNet_18000.pkl')
     parser.add_argument("--show_mask", action='store_true',
                         help="Run Deep extreme cut to obtain accurate mask")
 
@@ -133,10 +133,11 @@ if __name__ == "__main__":
     mean = np.array([0.40789654, 0.44719302, 0.47026115], dtype=np.float32)
     std  = np.array([0.28863828, 0.27408164, 0.27809835], dtype=np.float32)
     top_bboxes = {}
-
+    print("[demo] args.demo", args.demo, "os.path.isdir(args.demo)", os.path.isdir(args.demo))
     if os.path.isdir(args.demo):
         image_names = []
         ls = os.listdir(args.demo)
+        print("os.listdir(args.demo)", ls)
         for file_name in sorted(ls):
             ext = file_name[file_name.rfind('.') + 1:].lower()
             if ext in image_ext:
@@ -286,7 +287,7 @@ if __name__ == "__main__":
                 cv2.imshow('mask', mask_image)
             # cv2.imshow('out', image)
             # cv2.waitKey()
-            cv2.saveimg("out_images/out_"+ image_name.split('/')[-1])
+            cv2.imwrite("out_images/out_"+ image_name.split('/')[-1], mask_image)
 
 
 

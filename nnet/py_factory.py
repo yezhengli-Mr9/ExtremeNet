@@ -8,6 +8,16 @@ from models.py_utils.data_parallel import DataParallel
 
 torch.manual_seed(317)
 
+
+def print_log(text, system_configs):
+    # print("[print_log] text", text,"system_configs.snapshot_file",
+    #  system_configs.snapshot_file)
+    path = "_".join(system_configs.snapshot_file.split("_")[:-1])
+    # print("[print_log] path", path)
+    path_file_log = path +"_log.txt"
+    with open(path_file_log, 'a') as f:
+        f.write(text+'\n')
+
 class Network(nn.Module):
     def __init__(self, model, loss):
         super(Network, self).__init__()
@@ -124,6 +134,7 @@ class NetworkFactory(object):
     def load_params(self, iteration):
         cache_file = system_configs.snapshot_file.format(iteration)
         print("loading model from {}".format(cache_file))
+        print_log("loading model from {}".format(cache_file), system_configs)
         with open(cache_file, "rb") as f:
             if torch.cuda.is_available():
                 params = torch.load(f)

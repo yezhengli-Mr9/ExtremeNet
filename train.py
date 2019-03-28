@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os
+import os, datetime
 
 import json
 import torch
@@ -15,12 +15,14 @@ import traceback
 from tqdm import tqdm
 from utils import stdout_to_tqdm
 from config import system_configs
-from nnet.py_factory import NetworkFactory
+from nnet.py_factory import NetworkFactory, print_log
 from torch.multiprocessing import Process, Queue, Pool
 from db.datasets import datasets
 
 torch.backends.cudnn.enabled   = True
 torch.backends.cudnn.benchmark = True
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train CornerNet")
@@ -208,23 +210,33 @@ if __name__ == "__main__":
 
     train_split = system_configs.train_split
     val_split   = system_configs.val_split
-
+    print("current time:{}".format(datetime.datetime.now()))
+    print_log("============================",system_configs)
+    print_log("current time:{}".format(datetime.datetime.now()),system_configs)
+    
     print("loading all datasets...")
+    print_log("loading all datasets...", system_configs)
     dataset = system_configs.dataset
     # threads = max(torch.cuda.device_count() * 2, 4)
     threads = args.threads
     print("using {} threads".format(threads))
+    print_log("using {} threads".format(threads), system_configs)
     training_dbs  = [datasets[dataset](configs["db"], train_split) for _ in range(threads)]
     # print("[train] training_dbs", training_dbs)
     # Remove validation to save GPU resources
     # validation_db = datasets[dataset](configs["db"], val_split)
 
     print("system config...")
+    print_log("system config...", system_configs)
     pprint.pprint(system_configs.full)
+    print_log(str(system_configs.full),system_configs)
 
     print("db config...")
+    print_log("db config...",system_configs)
     pprint.pprint(training_dbs[0].configs)
+    print_log(str(training_dbs[0].configs ) , system_configs)
 
     print("len of db: {}".format(len(training_dbs[0].db_inds)))
+    print_log("len of db: {}".format(len(training_dbs[0].db_inds)) , system_configs)
     # train(training_dbs, validation_db, args.start_iter)
     train(training_dbs, None, args.start_iter, args.debug)

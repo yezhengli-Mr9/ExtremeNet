@@ -1,7 +1,7 @@
 {
     "system": {
         "dataset": "medicalExtreme",
-        "batch_size": 9,
+        "batch_size": 14,
         "sampling_function": "kp_detection",
 
         "train_split": "train",
@@ -15,11 +15,11 @@
         "opt_algo": "adam",
         "prefetch_size": 10,
 
-        "max_iter": 250000,
+        "max_iter": 30000,
         "stepsize": 200000,
         "snapshot": 1000,
 
-        "chunk_sizes": [3,3,3],
+        "chunk_sizes": [4,5,5],
 
         "data_dir": "./data",
 

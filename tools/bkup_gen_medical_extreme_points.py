@@ -1,5 +1,19 @@
-import glob, os, cv2
+import pycocotools.coco as cocoapi
+import sys,os, cv2
 import numpy as np
+import pickle
+import json
+SPLITS = [ 'train']# , 'val'
+ANN_PATH = '../data/medical_img/annotations/instances_{}2017.json'
+OUT_PATH = '../data/medical_img/annotations/instances_extreme_{}2017.json'
+IMG_DIR = '/Users/yezheng/medical_img/data/test/img/new'
+DEBUG = True
+from scipy.spatial import ConvexHull
+
+def _coco_box_to_bbox(box):
+  bbox = np.array([box[0], box[1], box[0] + box[2], box[1] + box[3]],
+                  dtype=np.int32)
+  return bbox
 
 def _get_extreme_points(pts):
   l, t = min(pts[:, 0]), min(pts[:, 1])
@@ -60,136 +74,70 @@ def _get_extreme_points(pts):
 
   return np.array([tt, ll, bb, rr])
 
+if __name__ == '__main__':
+	for split in SPLITS:
+		data = json.load(open(ANN_PATH.format(split), 'r'))
+		coco = cocoapi.COCO(ANN_PATH.format(split))
+		img_ids = coco.getImgIds()
+		num_images = len(img_ids)
+		num_classes = 80
+		tot_box = 0
+		print('num_images', num_images)
+		anns_all = data['annotations']
+		for i, ann in enumerate(anns_all):
+			#-----
+			img_id = ann['image_id']
+			img_info = coco.loadImgs(ids=[img_id])[0]
+			img_path = img_info['file_name']
 
-# if '__main__' == __name__:
-# 	output_file  = "../data/medical_img/annotations"
-#   if os.path.exists(output_file):
-#     print("NOT EXIST, to create one")
-#     os.makedirs(output_file)
-#   output_file = os.path.join(output_file,"instances_extreme_train2017.json")
-
-
-# 	data = {"annotations":[],"images":[],"category": {3:"spin_cord",4:"probe_right"}}
-	
-# 	mask_list = glob.glob('*.png')
-# 	mask_list = [m for m in mask_list if "corrected" not in m]
-# 	mask_list.sort()
-# 	for mask_name in mask_list:
-# 		splits = mask_name.split('/')[-1].split('_')[0]#[:-4].split('_')[0].split('e')
-# 		index = int(''.join([s for s in splits if s.isdigit()]))
-# 		mask = cv2.imread(mask_name,0)#.astype(np.float64)
-# 		mask_corrected = np.zeros(mask.shape)
-# 		for label in [3,4]:
-# 			mask_corrected_name = '../../medical_img/data/test/mask_label/_corrected{}/corrected'.format(label)+ mask_name.split('.')[0]+"_{}".format(label) +".png"
-# 			mask_corrected += label*(cv2.imread(mask_corrected_name,0) >0)#.astype(np.float64)
-		
 			
-# 	json.dump(data, open(output_file, 'w'))
-	
+			img = cv2.imread(img_path)
+			if None is img:
+				print("relocate the image")
+				img_path = os.path.join(IMG_DIR, img_info['file_name'].split('/')[-1])
+				img = cv2.imread(img_path)
 
-if __name__ == '__main__':	
-	label2name = {}
-  
-	# label2name[1] = "inst"
-	# label2name[2] = "artery"
-	# label2name[3] = "spin"
-
-	label_checked = 3			
-	mask_directory = '/home/zhang7/medical_img/data/test/mask_label'
-	img_origin_directory = '/home/zhang7/medical_img/data/test/img'
-	glob_path = os.path.join(mask_directory, "*.png")
-	mask_list = glob.glob(glob_path)
-	if 0  ==  len(mask_list):
-		mask_directory = '/Users/yezheng/medical_img/data/test/mask_label/_corrected{}'.format(label_checked)#'/Users/yezheng/medical_img/data/test/mask_label'
-		img_origin_directory = '/Users/yezheng/medical_img/data/test/img'
-		glob_path = os.path.join(mask_directory, "*.png")
-		mask_list = glob.glob(glob_path)
-	mask_list.sort()
-	# print("[gen_medical_extreme_points] mask_list", mask_list , "glob_path", glob_path)
-	max__ = 0
-	cl = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 0, 255)]
-	# print("mask_list", mask_list)
-	for i, mask_fname in enumerate(mask_list):
-		
-		tmp = "".join([n for n in mask_fname.split('/')[-1].split('_')[0] if n.isdigit()])
-		# print("mask_fname.split('/')[-1]",  mask_fname.split('/')[-1], "tmp", tmp)
-		mask_number = int(tmp )
-
-		# print(mask_number)	
-
-		#-----
-		mask = cv2.imread(mask_fname, 0)
-		# #=========
-		# tmp = np.where(5 == mask) # instrument 1
-		# if len(tmp[0])>0:
-		# 	pts = np.asarray(tmp).transpose()[:, ::-1].astype(np.int32)
-		# 	# print("[gen_medical_extreme_points] pts", len(pts))
-		# 	extreme_points = _get_extreme_points(pts).astype(np.int32)
-		# 	print("(before resize) extreme_points", extreme_points)
-		# #=========
-		# mask = mask.astype(np.float64)
-
-		# mask = cv2.resize(mask, dsize = (img__.shape[1], img__.shape[0]), interpolation = cv2.INTER_AREA)#interpolation = cv2.INTER_NEAREST)
-		mask= mask.astype(np.int32)
-		# print("mask",  mask.shape)
-		# img__ = cv2.resize(img_origin, dsize = (256,256))
-		# #=========
-		# tmp = np.where(5 == mask) # instrument 1
-		# if len(tmp[0])>0:
-		# 	pts = np.asarray(tmp).transpose()[:, ::-1].astype(np.int32)
-		# 	# print("[gen_medical_extreme_points] pts", len(pts))
-		# 	extreme_points = _get_extreme_points(pts).astype(np.int32)
-		# 	print("(after resize) extreme_points", extreme_points)
-		# #=========
-		img_origin = cv2.imread(os.path.join(img_origin_directory, 
-			"{:06d}.jpg".format(mask_number) ) )
-		# cv2.imshow("img",img_origin)
-		# cv2.waitKey()
-
-		img_origin = cv2.resize(img_origin.astype(np.float64), dsize = (mask.shape[1], mask.shape[0]))
-		
-		img__ = img_origin
-		
-		# if i >10:
-		# 	exit()
-		
-		if int(np.max(mask)) > max__:
-			max__ = int(np.max(mask))
-			print("max__", max__)
-		for label in np.unique(mask):
-			if label>0:
-				tmp = np.where(label == mask) # instrument 1
-				if label >100:
-					label = label_checked
-					mask = (mask>0)*label
+			print("img_path", img_path)	
+			print("img", img.shape)
+			#-----
+			tot_box += 1
+			bbox = ann['bbox']
+			seg = ann['segmentation']
+			if type(seg) == list:
+				if len(seg) == 1:
+					pts = np.array(seg[0]).reshape(-1, 2)
+				else:
+					pts = []
+					for v in seg:
+						pts += v
+					pts = np.array(pts).reshape(-1, 2)
+			else:
+				mask = coco.annToMask(ann) * 255
+				tmp = np.where(mask > 0)
 				pts = np.asarray(tmp).transpose()[:, ::-1].astype(np.int32)
-				extreme_points = _get_extreme_points(pts).astype(np.int32)
-				# if 5 == label: 
-					# print("[after resize] extreme_points", extreme_points)
-				# 	print(" np.sum(mask, axis = 1).T", np.sum(mask, axis = 1).T)
-				# 	print(" np.sum(mask, axis = 0).T", np.sum(mask, axis = 0).T)
-
-				#mask = mask.reshape(img__.shape[0], img__.shape[1], 1)
-				# print("mask", mask.shape)
-				out_img = (0.4 * img__ + 0.6 * 255*(label == mask)[...,None]).astype(np.uint8)
+			extreme_points = _get_extreme_points(pts).astype(np.int32)
+			anns_all[i]['extreme_points'] = extreme_points.copy().tolist()
+			if DEBUG:
+				img_id = ann['image_id']
+				img_info = coco.loadImgs(ids=[img_id])[0]
+				img_path = os.path.join(IMG_DIR.format(split) , img_info['file_name'].split('/')[-1])
+				print("img_path", img_path)
+				img = cv2.imread(img_path)
+				img = cv2.resize(img, (720, 370), interpolation = cv2.INTER_LINEAR)
+				print('[bkup_gen_medical_extreme_points.py] type(seg) == list', type(seg) == list)
+				if type(seg) == list:
+					mask = np.zeros((img.shape[0], img.shape[1], 1), dtype=np.uint8)
+					cv2.fillPoly(mask, [pts.astype(np.int32).reshape(-1, 1, 2)], (255,0,0))
+				else:
+					mask = mask.reshape(img.shape[0], img.shape[1], 1)
+				img = (0.4 * img + 0.6 * mask).astype(np.uint8)
+				bbox = _coco_box_to_bbox(ann['bbox'])
+				cl = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 0, 255)]
 				for j in range(extreme_points.shape[0]):
-					cv2.circle(out_img, (extreme_points[j, 0], extreme_points[j, 1]), 5, cl[j], -1)
-				# try:
-				# 	
-				# except:
-				# try:
-				out_name = '/Users/yezheng/github/ExtremeNet/out_extreme_medical_img_{}/{:07d}_extreme{}.png'.format(label,mask_number,label)
-				# print("[gen_medical_extreme_points] out_name", out_name)
-				cv2.imwrite(out_name, out_img)
-			# except:
-				out_name = '/home/yezheng/github/ExtremeNet/out_extreme_medical_img_{}/{:07d}_extreme{}.png'.format(label,mask_number,label)
-				# print("[gen_medical_extreme_points] out_name", out_name)
-				cv2.imwrite(out_name, out_img)
-				# if 5 == label:
-				# 	print("[gen_medical_extreme_points] out_name", out_name)
-				# 	print("[gen_medical_extreme_points] extreme_points", extreme_points)
-				
-		    # cv2.waitKey()
-		    	# if 2 == label:
-
-
+					cv2.circle(img, (extreme_points[j, 0], extreme_points[j, 1]),
+						5, cl[j], -1)
+				cv2.imshow('img', img)
+				cv2.waitKey()
+	print('tot_box', tot_box)   
+	data['annotations'] = anns_all
+	json.dump(data, open(OUT_PATH.format(split), 'w'))
