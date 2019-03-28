@@ -284,8 +284,9 @@ if __name__ == "__main__":
             #yezheng: comment out
             if args.show_mask:
                 cv2.imshow('mask', mask_image)
-            cv2.imshow('out', image)
-            cv2.waitKey()
+            # cv2.imshow('out', image)
+            # cv2.waitKey()
+            cv2.saveimg("out_images/out_"+ image_name.split('/')[-1])
 
 
 

@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import pickle
 import json
-SPLITS = ['train']#'val', 
+SPLITS = [ 'train']# , 'val'
 ANN_PATH = '../data/coco/annotations/instances_{}2017.json'
 OUT_PATH = '../data/coco/annotations/instances_extreme_{}2017.json'
 IMG_DIR = '../data/coco/{}2017/'
@@ -78,6 +78,10 @@ def _get_extreme_points(pts):
 if __name__ == '__main__':
   for split in SPLITS:
     data = json.load(open(ANN_PATH.format(split), 'r'))
+    #----
+    # print("[gen_coco_extreme_points] data.keys()", data.keys())
+    # [gen_coco_extreme_points] data.keys() dict_keys(['info', 'licenses', 'images', 'annotations', 'categories'])
+    #----
     coco = cocoapi.COCO(ANN_PATH.format(split))
     img_ids = coco.getImgIds()
     num_images = len(img_ids)
@@ -86,9 +90,19 @@ if __name__ == '__main__':
     print('num_images', num_images)
     anns_all = data['annotations']
     for i, ann in enumerate(anns_all):
+      #-------
+      # print("[gen_coco_extreme_points] ann.keys()", ann.keys())
+      # [gen_coco_extreme_points] ann.keys() dict_keys(['segmentation', 'area', 'iscrowd', 'image_id', 'bbox', 'category_id', 'id'])
+      #-------
       tot_box += 1
       bbox = ann['bbox']
+      # print("[gen_coco_extreme_points] bbox",bbox)
+      # [gen_coco_extreme_points] bbox [199.84, 200.46, 77.71, 70.88]
       seg = ann['segmentation']
+      # print("[gen_coco_extreme_points] seg",len(seg),seg[0])
+      # [gen_coco_extreme_points] seg 1 [542.57, 272.13, 543.62, 269.66, 542.92, 266.02, 547.14, 266.02, 546.79, 269.19, 546.67, 273.3, 546.32, 273.89, 544.09, 274.36, 544.21, 272.83]
+      # yezheng: according to https://zhuanlan.zhihu.com/p/29393415
+      # RLE (run-length encoding) or [polygon]
       if type(seg) == list:
         if len(seg) == 1:
           pts = np.array(seg[0]).reshape(-1, 2)
@@ -98,9 +112,27 @@ if __name__ == '__main__':
             pts += v
           pts = np.array(pts).reshape(-1, 2)
       else:
+        # print("[gen_coco_extreme_points] coco.annToMask")
+        #yezheng: there are many go till this condition
         mask = coco.annToMask(ann) * 255
+        print("[gen_coco_extrem_points] np.unique(mask)", np.unique(mask))
+        # print("[gen_coco_extreme_points] seg.keys()",seg.keys()) #this is a dictionary
+        # print("[gen_coco_extreme_points] mask",mask.shape)
+        # # [gen_coco_extreme_points] seg.keys() dict_keys(['counts', 'size'])
+        # # [gen_coco_extreme_points] mask (424, 640)
         tmp = np.where(mask > 0)
+        # print("[gen_coco_extreme_points] len(tmp[0])",len(tmp[0])) #this is a dictionary
+        # len(tmp[0]) 2319
         pts = np.asarray(tmp).transpose()[:, ::-1].astype(np.int32)
+        # print("[gen_coco_extreme_points] pts",pts) #this is a dictionary
+
+        # # [gen_coco_extreme_points] pts [[291 308]
+        # #  [292 308]
+        # #  [293 308]
+        # #  ...
+        # #  [168 373]
+        # #  [169 373]
+        # #  [170 373]]
       extreme_points = _get_extreme_points(pts).astype(np.int32)
       anns_all[i]['extreme_points'] = extreme_points.copy().tolist()
       if DEBUG:
@@ -123,6 +155,6 @@ if __name__ == '__main__':
         cv2.waitKey()
     print('tot_box', tot_box)   
     data['annotations'] = anns_all
-    json.dump(data, open(OUT_PATH.format(split), 'w'))
+    json.dump(data, open(OUT_PATH.format(split), 'w'))#yezheng: this does nothing
   
 
