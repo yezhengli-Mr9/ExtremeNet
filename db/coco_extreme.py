@@ -37,8 +37,10 @@ class MSCOCOExtreme(DETECTION):
                                             "instances_extreme_{}.json")
             self._label_file = self._label_file.format(self._dataset)
 
-        self._image_dir  = os.path.join(self._coco_dir, "images", self._dataset)
+        self._image_dir  = os.path.join(self._coco_dir,  self._dataset)#"images",
+
         self._image_file = os.path.join(self._image_dir, "{}")
+        # print("[MSCOCOExtreme] self._image_file", self._image_file)
 
         self._data = "coco_extreme"
         self._mean = np.array([0.40789654, 0.44719302, 0.47026115],
@@ -73,13 +75,20 @@ class MSCOCOExtreme(DETECTION):
         self._cache_file = os.path.join(
             cache_dir, "coco_extreme_{}.pkl".format(self._dataset))
         self._load_data()
-        self._db_inds = np.arange(len(self._image_ids))
+        #yezheng: amazing!! this is called as self.db_inds
+        # print("[__init__] self._image_ids", self._image_ids)
+        #data = np.arange(len(self._image_ids))
+        data = json.load(open('data/coco/annotations/instances_extreme_train2017.json', 'r'))
+        self._db_inds = np.array(sorted([ann['image_id'] for ann in data['annotations']])) 
+
+
 
         self._load_coco_data() 
 
     def _load_data(self):
+        # print("[_load_data] self._cache_file", self._cache_file)
         print("loading from cache file: {}".format(self._cache_file))
-        if not os.path.exists(self._cache_file):
+        if True: #not os.path.exists(self._cache_file):#yezheng:
             print("No cache file found...")
             self._extract_data()
             with open(self._cache_file, "wb") as f:
@@ -110,15 +119,18 @@ class MSCOCOExtreme(DETECTION):
         return cat["name"]
 
     def _extract_data(self):
+        # print("[_extract_data] self._label_file", self._label_file)
+        #yezheng: ```_extract_data``` is not called
         self._coco    = COCO(self._label_file)
+
         self._cat_ids = self._coco.getCatIds()
 
         coco_image_ids = self._coco.getImgIds()
 
-        self._image_ids = [
-            self._coco.loadImgs(img_id)[0]["file_name"] 
+        self._image_ids = dict(
+            (img_id,self._coco.loadImgs(img_id)[0]["file_name"] )
             for img_id in coco_image_ids
-        ]
+        )
         self._detections = {}
         self._extreme_pts = {}
         for ind, (coco_image_id, image_id) in enumerate(tqdm(zip(coco_image_ids, self._image_ids))):
@@ -147,18 +159,24 @@ class MSCOCOExtreme(DETECTION):
             categories = np.array(categories, dtype=float)
             extreme_pts = np.array(extreme_pts, dtype=float)
             if bboxes.size == 0 or categories.size == 0:
+                #yezheng
+                # self._detections[coco_image_id] = np.zeros((0, 5), dtype=np.float32)
+                # self._extreme_pts[coco_image_id] = np.zeros((0, 4, 2),  dtype=np.float32)
+                #----
                 self._detections[image_id] = np.zeros((0, 5), dtype=np.float32)
-                self._extreme_pts[image_id] = np.zeros((0, 4, 2), 
-                                                       dtype=np.float32)
+                self._extreme_pts[image_id] = np.zeros((0, 4, 2),  dtype=np.float32)
             else:
-                self._detections[image_id] = np.hstack((bboxes, 
-                                                        categories[:, None]))
+                self._detections[coco_image_id] = np.hstack((bboxes,  categories[:, None]))
+                self._extreme_pts[coco_image_id] = extreme_pts
+                #----
+                self._detections[image_id] = np.hstack((bboxes,  categories[:, None]))
                 self._extreme_pts[image_id] = extreme_pts
 
     def detections(self, ind):
         image_id = self._image_ids[ind]
-        detections = self._detections[image_id]
-        extreme_pts = self._extreme_pts[image_id]
+        # print("[detections] self._detections.keys()", self._detections.keys())
+        detections = self._detections[ind]
+        extreme_pts = self._extreme_pts[ind]
 
         return detections.astype(float).copy(), \
                extreme_pts.astype(float).copy()

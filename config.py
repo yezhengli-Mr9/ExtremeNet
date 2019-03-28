@@ -39,6 +39,9 @@ class Config:
         # Rng
         self._configs["data_rng"] = np.random.RandomState(123)
         self._configs["nnet_rng"] = np.random.RandomState(317)
+        # print("[Config] self.snapshot_name",self.snapshot_name)
+        # [Config] self.snapshot_name None
+        
 
     @property
     def chunk_sizes(self):

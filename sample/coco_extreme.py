@@ -78,16 +78,19 @@ def kp_detection(db, k_ind, data_aug, debug):
     tag_lens   = np.zeros((batch_size, ), dtype=np.int32)
 
     db_size = db.db_inds.size
+    # print("[kp_detection] db.db_inds", db.db_inds, "db_size", db_size)
     for b_ind in range(batch_size):
-        if not debug and k_ind == 0:
+        if not debug and 0 == k_ind:
             db.shuffle_inds()
 
         db_ind = db.db_inds[k_ind]
         k_ind  = (k_ind + 1) % db_size
 
         # reading image
+        # print("[kp_detection] db_ind", db_ind, "db.image_file", db.image_file)
         image_file = db.image_file(db_ind)
-        image      = cv2.imread(image_file)
+        # print("[kp_detection] image_file", image_file)
+        image  = cv2.imread(image_file)
 
         # reading detections
         detections, extreme_pts = db.detections(db_ind)

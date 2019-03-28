@@ -258,15 +258,15 @@ class exkp(nn.Module):
                 inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
                 inter = self.relu(inter)
                 inter = self.inters[ind](inter)
-        print("[exkp _test] image",image.shape)
-        print("[exkp _test] kwargs",kwargs)
+        # print("[exkp _test] image",image.shape)
+        # print("[exkp _test] kwargs",kwargs)
         if kwargs['debug']:
             _debug(image, t_heat, l_heat, b_heat, r_heat, ct_heat)
         del kwargs['debug']
         return self._decode(*outs[-9:], **kwargs)
 
     def forward(self, *xs, **kwargs):
-        print("[exkp forward] xs", len(xs))# yezheng: this seems to be ok
+        # print("[exkp forward] xs", len(xs))# yezheng: this seems to be ok
         if len(xs) > 1:
             return self._train(*xs, **kwargs)
         return self._test(*xs, **kwargs)

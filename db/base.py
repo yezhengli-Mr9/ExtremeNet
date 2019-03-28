@@ -8,7 +8,7 @@ class BASE(object):
     def __init__(self):
         self._split = None
         self._db_inds = []
-        self._image_ids = []
+        self._image_ids = {}#[]#yezheng
 
         self._data            = None
         self._image_hdf5      = None
@@ -70,7 +70,7 @@ class BASE(object):
     def image_file(self, ind):
         if self._image_file is None:
             raise ValueError("Image path is not initialized")
-
+        # print("[BASE image_file] self._image_ids", self._image_ids)
         image_id = self._image_ids[ind]
         return self._image_file.format(image_id)
 

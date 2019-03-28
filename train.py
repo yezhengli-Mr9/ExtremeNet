@@ -63,6 +63,7 @@ def prefetch_data(db, queue, sample_data, data_aug, debug=False):
         except Exception as e:
             traceback.print_exc()
             raise e
+            # exit()
 
 def pin_memory(data_queue, pinned_data_queue, sema):
     while True:
@@ -77,11 +78,13 @@ def pin_memory(data_queue, pinned_data_queue, sema):
             return
 
 def init_parallel_jobs(dbs, queue, fn, data_aug, debug=False):
+    #=======
     tasks = [Process(target=prefetch_data, 
                      args=(db, queue, fn, data_aug, debug)) for db in dbs]
     for task in tasks:
         task.daemon = True
         task.start()
+    #========
     return tasks
 
 def train(training_dbs, validation_db, start_iter=0, debug=False):
@@ -212,6 +215,7 @@ if __name__ == "__main__":
     threads = args.threads
     print("using {} threads".format(threads))
     training_dbs  = [datasets[dataset](configs["db"], train_split) for _ in range(threads)]
+    # print("[train] training_dbs", training_dbs)
     # Remove validation to save GPU resources
     # validation_db = datasets[dataset](configs["db"], val_split)
 

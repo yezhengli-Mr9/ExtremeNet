@@ -12,9 +12,9 @@ from config import system_configs
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
-class MSCOCOExtreme(DETECTION):
+class medicalExtreme(DETECTION):
     def __init__(self, db_config, split):
-        super(MSCOCOExtreme, self).__init__(db_config)
+        super(medicalExtreme, self).__init__(db_config)
         data_dir   = system_configs.data_dir
         cache_dir  = system_configs.cache_dir
 
@@ -25,9 +25,9 @@ class MSCOCOExtreme(DETECTION):
             "testdev": "test2017"
         }[self._split]
         
-        self._coco_dir = os.path.join(data_dir, "coco")
+        self._medical_dir = os.path.join(data_dir, "medical_img")
 
-        self._label_dir  = os.path.join(self._coco_dir, "annotations")
+        self._label_dir  = os.path.join(self._medical_dir, "annotations")
         
         if self._split == 'testdev':
             self._label_file = os.path.join(
@@ -37,10 +37,10 @@ class MSCOCOExtreme(DETECTION):
                                             "instances_extreme_{}.json")
             self._label_file = self._label_file.format(self._dataset)
 
-        self._image_dir  = os.path.join(self._coco_dir, "images", self._dataset)
-        self._image_file = os.path.join(self._image_dir, "{}")
-
-        self._data = "coco_extreme"
+        self._image_dir  = os.path.join(self._medical_dir,  self._dataset)#self._image
+        self._image_file = '{}'#os.path.join(self._image_dir, "{}")#yezheng: this is practically useless 
+        print("[medicalExtreme] self._image_file", self._image_file)
+        self._data = "medical_extreme"
         self._mean = np.array([0.40789654, 0.44719302, 0.47026115],
                               dtype=np.float32)
         self._std  = np.array([0.28863828, 0.27408164, 0.27809835],
@@ -71,7 +71,7 @@ class MSCOCOExtreme(DETECTION):
         }
 
         self._cache_file = os.path.join(
-            cache_dir, "coco_extreme_{}.pkl".format(self._dataset))
+            cache_dir, "medical_extreme_{}.pkl".format(self._dataset))
         self._load_data()
         self._db_inds = np.arange(len(self._image_ids))
 
@@ -91,6 +91,7 @@ class MSCOCOExtreme(DETECTION):
                 self._extreme_pts = pickle.load(f)
 
     def _load_coco_data(self):
+        print("[_load_coco_data] self._label_file", self._label_file)
         self._coco = COCO(self._label_file)
         with open(self._label_file, "r") as f:
             data = json.load(f)

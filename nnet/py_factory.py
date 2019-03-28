@@ -33,11 +33,11 @@ class DummyModule(nn.Module):
 class NetworkFactory(object):
     def __init__(self, db):
         super(NetworkFactory, self).__init__()
-        print("[NetworkFactory __init__] db", db )
+        # print("[NetworkFactory __init__] db", db )
         module_file = "models.{}".format(system_configs.snapshot_name)
-        print("[NetworkFactory __init__] module_file: {}".format(module_file))
+        # print("[NetworkFactory __init__] module_file: {}".format(module_file))
         nnet_module = importlib.import_module(module_file)
-        print("[NetworkFactory __init__] nnet_module", nnet_module)
+        # print("[NetworkFactory __init__] nnet_module", nnet_module)
         self.model   = DummyModule(nnet_module.model(db))
         self.loss    = nnet_module.loss # yezheng: this is last line in models/ExtremeNet.py
         self.network = Network(self.model, self.loss)
@@ -63,6 +63,9 @@ class NetworkFactory(object):
             )
         else:
             raise ValueError("unknown optimizer")
+
+        # print("[NetworkFactory] system_configs.snapshot_file",system_configs.snapshot_file)
+        # ystem_configs.snapshot_file ./cache/nnet/medical_ExtremeNet/medical_ExtremeNet_{}.pkl
 
     def cuda(self):
         self.model.cuda()
@@ -130,6 +133,7 @@ class NetworkFactory(object):
 
     def save_params(self, iteration):
         cache_file = system_configs.snapshot_file.format(iteration)
+
         print("saving model to {}".format(cache_file))
         with open(cache_file, "wb") as f:
             params = self.model.state_dict()

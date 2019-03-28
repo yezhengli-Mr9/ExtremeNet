@@ -78,9 +78,12 @@ def _get_extreme_points(pts):
 if __name__ == '__main__':
   for split in SPLITS:
     data = json.load(open(ANN_PATH.format(split), 'r'))
+    # small_data = { 'annotations':[]}
     #----
     # print("[gen_coco_extreme_points] data.keys()", data.keys())
+
     # [gen_coco_extreme_points] data.keys() dict_keys(['info', 'licenses', 'images', 'annotations', 'categories'])
+    print("[gen_coco_extreme_points] data['images'][0].keys()", data['images'][0].keys())
     #----
     coco = cocoapi.COCO(ANN_PATH.format(split))
     img_ids = coco.getImgIds()
@@ -90,6 +93,9 @@ if __name__ == '__main__':
     print('num_images', num_images)
     anns_all = data['annotations']
     for i, ann in enumerate(anns_all):
+      # img_id = ann['image_id']
+      # print("ann['image_id']", img_id)
+      # print("ann", ann)
       #-------
       # print("[gen_coco_extreme_points] ann.keys()", ann.keys())
       # [gen_coco_extreme_points] ann.keys() dict_keys(['segmentation', 'area', 'iscrowd', 'image_id', 'bbox', 'category_id', 'id'])
@@ -115,7 +121,7 @@ if __name__ == '__main__':
         # print("[gen_coco_extreme_points] coco.annToMask")
         #yezheng: there are many go till this condition
         mask = coco.annToMask(ann) * 255
-        print("[gen_coco_extrem_points] np.unique(mask)", np.unique(mask))
+        # print("[gen_coco_extrem_points] np.unique(mask)", np.unique(mask))
         # print("[gen_coco_extreme_points] seg.keys()",seg.keys()) #this is a dictionary
         # print("[gen_coco_extreme_points] mask",mask.shape)
         # # [gen_coco_extreme_points] seg.keys() dict_keys(['counts', 'size'])
@@ -135,24 +141,24 @@ if __name__ == '__main__':
         # #  [170 373]]
       extreme_points = _get_extreme_points(pts).astype(np.int32)
       anns_all[i]['extreme_points'] = extreme_points.copy().tolist()
-      if DEBUG:
-        img_id = ann['image_id']
-        img_info = coco.loadImgs(ids=[img_id])[0]
-        img_path = IMG_DIR.format(split) + img_info['file_name']
-        img = cv2.imread(img_path)
-        if type(seg) == list:
-          mask = np.zeros((img.shape[0], img.shape[1], 1), dtype=np.uint8)
-          cv2.fillPoly(mask, [pts.astype(np.int32).reshape(-1, 1, 2)], (255,0,0))
-        else:
-          mask = mask.reshape(img.shape[0], img.shape[1], 1)
-        img = (0.4 * img + 0.6 * mask).astype(np.uint8)
-        bbox = _coco_box_to_bbox(ann['bbox'])
-        cl = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 0, 255)]
-        for j in range(extreme_points.shape[0]):
-          cv2.circle(img, (extreme_points[j, 0], extreme_points[j, 1]),
-                          5, cl[j], -1)
-        cv2.imshow('img', img)
-        cv2.waitKey()
+      # if DEBUG:
+      #   img_id = ann['image_id']
+      #   img_info = coco.loadImgs(ids=[img_id])[0]
+      #   img_path = IMG_DIR.format(split) + img_info['file_name']
+      #   img = cv2.imread(img_path)
+      #   if type(seg) == list:
+      #     mask = np.zeros((img.shape[0], img.shape[1], 1), dtype=np.uint8)
+      #     cv2.fillPoly(mask, [pts.astype(np.int32).reshape(-1, 1, 2)], (255,0,0))
+      #   else:
+      #     mask = mask.reshape(img.shape[0], img.shape[1], 1)
+      #   img = (0.4 * img + 0.6 * mask).astype(np.uint8)
+      #   bbox = _coco_box_to_bbox(ann['bbox'])
+      #   cl = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 0, 255)]
+      #   for j in range(extreme_points.shape[0]):
+      #     cv2.circle(img, (extreme_points[j, 0], extreme_points[j, 1]),
+      #                     5, cl[j], -1)
+      #   cv2.imshow('img', img)
+      #   cv2.waitKey()
     print('tot_box', tot_box)   
     data['annotations'] = anns_all
     json.dump(data, open(OUT_PATH.format(split), 'w'))#yezheng: this does nothing
