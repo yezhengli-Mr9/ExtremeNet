@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument("--demo", help="demo image path or folders",
                         default="data/medical_img/test2017", type=str)
     parser.add_argument("--model_path",
-                        default='cache/nnet/medical_ExtremeNet/medical_ExtremeNet_3000.pkl')
+                        default='cache/nnet/medical_ExtremeNet/medical_ExtremeNet_26000.pkl')
     parser.add_argument("--show_mask", action='store_true',
                         help="Run Deep extreme cut to obtain accurate mask")
 
@@ -118,8 +118,8 @@ if __name__ == "__main__":
         "linear_soft_nms": 1, 
         "exp_soft_nms": 2
     }["exp_soft_nms"]
-    if args.show_mask:
-        dextr = Dextr()
+    # if args.show_mask:
+    dextr = Dextr()
 
 
     mean = np.array([0.40789654, 0.44719302, 0.47026115], dtype=np.float32)
@@ -140,6 +140,9 @@ if __name__ == "__main__":
     #     "os.path.isdir(args.demo)", os.path.isdir(args.demo),"args", args)
     for image_id in tqdm.tqdm(range(len(image_names))):
         image_name  = image_names[image_id]
+        print("image_name.split('.')[-2][-6:]", image_name.split('.')[-2][-6:])
+        if 1310 >= int(image_name.split('.')[-2][-6:]):
+            continue
         print('Running ', image_name)
         image      = cv2.imread(image_name)
 
@@ -259,30 +262,31 @@ if __name__ == "__main__":
                     txt   = '{}{:.2f}'.format(cat_name, sc)
                     color_mask = color_list[mask_color_id % len(color_list), :3]
                     mask_color_id += 1
-                    image = vis_bbox(image, 
-                                     (bbox[0], bbox[1], 
-                                      bbox[2] - bbox[0], bbox[3] - bbox[1]))
+                    # image = vis_bbox(image, 
+                    #                  (bbox[0], bbox[1], 
+                    #                   bbox[2] - bbox[0], bbox[3] - bbox[1]))
                     image = vis_class(image, 
                                       (bbox[0], bbox[1] - 2), txt)
-                    image = vis_octagon( image, ex, color_mask)
+                    # image = vis_octagon( image, ex, color_mask)
                     image = vis_ex(image, ex, color_mask)
 
-                    if args.show_mask:
-                        mask = dextr.segment(input_image[:, :, ::-1], ex) # BGR to RGB
-                        mask = np.asfortranarray(mask.astype(np.uint8))
-                        mask_image = vis_bbox(mask_image, 
-                                             (bbox[0], bbox[1], 
-                                              bbox[2] - bbox[0], 
-                                              bbox[3] - bbox[1]))
-                        mask_image = vis_class(mask_image, 
-                                               (bbox[0], bbox[1] - 2), txt)
-                        mask_image = vis_mask(mask_image, mask, color_mask)
+                    # if args.show_mask:
+                    mask = dextr.segment(input_image[:, :, ::-1], ex) # BGR to RGB
+                    mask = np.asfortranarray(mask.astype(np.uint8))
+                    mask_image = vis_bbox(mask_image, 
+                                         (bbox[0], bbox[1], 
+                                          bbox[2] - bbox[0], 
+                                          bbox[3] - bbox[1]))
+                    mask_image = vis_class(mask_image, 
+                                           (bbox[0], bbox[1] - 2), txt)
+                    mask_image = vis_mask(mask_image, mask, color_mask)
             #yezheng: comment out
             if args.show_mask:
                 cv2.imshow('mask', mask_image)
             # cv2.imshow('out', image)
             # cv2.waitKey()
-            cv2.imwrite("out_images/"+ image_name.split('/')[-1].split('.')[0]+"_out.png", image)
+            # cv2.imwrite("out_images/"+ image_name.split('/')[-1].split('.')[0]+"_out.png", image)
+            cv2.imwrite("out_images/"+ image_name.split('/')[-1].split('.')[0]+"_out.png", mask_image)
 
 
 
