@@ -17,7 +17,7 @@
 
         "max_iter": 30000,
         "stepsize": 200000,
-        "snapshot": 200,
+        "snapshot": 1000,
 
         "chunk_sizes": [5,6],
 
@@ -44,7 +44,7 @@
         "test_scales": [1],
 
         "top_k": 40,
-        "categories": 3,
+        "categories": 2,
         "aggr_weight": 0.1,
         "scores_thresh": 0.1,
         "center_thresh": 0.1,

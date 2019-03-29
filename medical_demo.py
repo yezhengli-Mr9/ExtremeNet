@@ -6,7 +6,7 @@ import pprint
 import argparse
 import importlib
 import numpy as np
-import cv2
+import cv2, tqdm
 
 import matplotlib
 matplotlib.use("Agg")
@@ -24,24 +24,9 @@ from db.datasets import datasets
 
 torch.backends.cudnn.benchmark = False
 
-# class_name = [
-#     '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
-#     'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
-#     'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse',
-#     'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
-#     'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis',
-#     'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
-#     'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass',
-#     'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
-#     'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake',
-#     'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv',
-#     'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
-#     'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
-#     'scissors', 'teddy bear', 'hair drier', 'toothbrush'
-# ]
-
-class_name = ['__background__', "probe_right", "spin_cord"]
-
+#
+# class_name = ['__background__', "probe_right", "spin_cord"]
+class_name = ['__background__', "probe", "scissor","probe"]
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
 
 def parse_args():
@@ -153,7 +138,8 @@ if __name__ == "__main__":
         image_names = [args.demo]
     # print("[demo] image_names", image_names, "args.demo", args.demo,
     #     "os.path.isdir(args.demo)", os.path.isdir(args.demo),"args", args)
-    for image_id, image_name in enumerate(image_names):
+    for image_id in tqdm.tqdm(range(len(image_names))):
+        image_name  = image_names[image_id]
         print('Running ', image_name)
         image      = cv2.imread(image_name)
 
@@ -262,8 +248,9 @@ if __name__ == "__main__":
             mask_image    = image.copy()
             bboxes = {}
             # print("[demo] categories", categories)
-            for j in range(1, categories ):
-                keep_inds = (top_bboxes[image_id][j][:, 4] > 0.5)
+            Threshold= {1:0.3, 2:0.0, 3:0.3}
+            for j in range(1, categories +1):
+                keep_inds = (top_bboxes[image_id][j][:, 4] > 0.3) #yezheng: this threshold is important
                 cat_name  = class_name[j]
                 for bbox in top_bboxes[image_id][j][keep_inds]:
                     sc    = bbox[4]

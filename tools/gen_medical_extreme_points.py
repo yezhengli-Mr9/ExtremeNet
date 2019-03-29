@@ -121,13 +121,18 @@ if '__main__' == __name__:
 	output_file_init = os.path.join(output_file,"instances_train2017.json")
 	del output_file
 
-	labels_list_to_check = [3,4]
+	labels_list_to_check = [4,5,6]#[3,4]
 	data_extreme = {"annotations":[],"images":[],"categories": []}
-
+	min_base_index = min(labels_list_to_check) - 1
 	# for label in labels_list_to_check:
-	data_extreme["categories"].append({"id":3-2,"name":"spin_cord", "supercategory":"spin_cord"})
-	data_extreme["categories"].append({"id":4-2,"name":"probe_right", "supercategory":"probe_right"})
-	
+  #========
+	# data_extreme["categories"].append({"id":3-min_base_index,"name":"spin_cord", "supercategory":"spin_cord"})
+	# data_extreme["categories"].append({"id":4-min_base_index,"name":"probe_right", "supercategory":"probe"})
+	#========  
+	data_extreme["categories"].append({"id":4-min_base_index,"name":"probe_right", "supercategory":"probe"})
+	data_extreme["categories"].append({"id":6-min_base_index,"name":"probe_left", "supercategory":"probe"})
+	data_extreme["categories"].append({"id":5-min_base_index,"name":"scissor", "supercategory":"scissor"})
+  #========
 	mask_list = glob.glob('../../../medical_img/data/test/mask_label/*.png')
 	# print("mask_list", mask_list)
 	mask_list = [m for m in mask_list if "corrected" not in m]
@@ -158,9 +163,12 @@ if '__main__' == __name__:
 			mask_corrected_name = '../../../medical_img/data/test/mask_label/_corrected{}/correctedFrame{:04d}_ordered_{}.png'.format(label, index, label)
 			
 			mask_corrected = cv2.imread(mask_corrected_name,0)
-			if None is mask_corrected:  print("mask_corrected_name", mask_corrected_name)
+			# print(mask_corrected.shape)
+			if None is mask_corrected:  
+				print("mask_corrected_name NOT EXIST", mask_corrected_name)
+				continue
 			mask_corrected = (mask_corrected >0).astype(np.int32)
-			ann = create_sub_mask_annotation(sub_mask = mask_corrected, image_id = index, category_id = label-2, annotation_id = annotation_id , is_crowd = 0)
+			ann = create_sub_mask_annotation(sub_mask = mask_corrected, image_id = index, category_id = label-min_base_index, annotation_id = annotation_id , is_crowd = 0)
 			# print("[gen_medical_extreme_points] ann", ann)
 			annotation_id += 1 # automatically increase
 			tmp = np.where(mask_corrected > 0)
