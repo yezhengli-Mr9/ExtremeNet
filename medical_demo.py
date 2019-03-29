@@ -20,35 +20,38 @@ from external.nms import soft_nms_with_points as soft_nms
 from utils.color_map import colormap
 from utils.visualize import vis_mask, vis_octagon, vis_ex, vis_class, vis_bbox
 from dextr import Dextr
+from db.datasets import datasets
 
 torch.backends.cudnn.benchmark = False
 
-class_name = [
-    '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
-    'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
-    'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse',
-    'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
-    'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis',
-    'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
-    'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass',
-    'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
-    'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake',
-    'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv',
-    'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
-    'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
-    'scissors', 'teddy bear', 'hair drier', 'toothbrush'
-]
+# class_name = [
+#     '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
+#     'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
+#     'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse',
+#     'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
+#     'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis',
+#     'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
+#     'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass',
+#     'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
+#     'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake',
+#     'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv',
+#     'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
+#     'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
+#     'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+# ]
+
+class_name = ["spin_cord", "probe_right"]
 
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Demo CornerNet")
     parser.add_argument("--cfg_file", help="config file", 
-                        default='ExtremeNet', type=str)
+                        default='medical_ExtremeNet', type=str)
     parser.add_argument("--demo", help="demo image path or folders",
-                        default="", type=str)
+                        default="data/medical_img/test2017", type=str)
     parser.add_argument("--model_path",
-                        default='cache/ExtremeNet_250000.pkl')
+                        default='cache/nnet/medical_ExtremeNet/medical_ExtremeNet_1000.pkl')
     parser.add_argument("--show_mask", action='store_true',
                         help="Run Deep extreme cut to obtain accurate mask")
 
@@ -90,7 +93,7 @@ if __name__ == "__main__":
     args = parse_args()
     cfg_file = os.path.join(
         system_configs.config_dir, args.cfg_file + ".json")
-    print("cfg_file: {}".format(cfg_file))
+    print("[demo] cfg_file: {}".format(cfg_file))
 
     with open(cfg_file, "r") as f:
         configs = json.load(f)
@@ -102,10 +105,14 @@ if __name__ == "__main__":
     
     print("loading parameters: {}".format(args.model_path))
     print("building neural network...")
-    nnet = NetworkFactory(None)
+    train_split = system_configs.train_split
+    dataset = system_configs.dataset
+    training_db = datasets[dataset](configs["db"], train_split)
+    nnet = NetworkFactory(training_db)
     print("loading parameters...")
     nnet.load_pretrained_params(args.model_path)
-    nnet.cuda()
+    if torch.cuda.is_available():
+        nnet.cuda()
     nnet.eval_mode()
 
     K             = configs["db"]["top_k"]
@@ -118,6 +125,7 @@ if __name__ == "__main__":
     scales        = configs["db"]["test_scales"]
     weight_exp    = 8
     categories    = configs["db"]["categories"]
+    print('''[demo] configs["db"]''', configs["db"])
     nms_threshold = configs["db"]["nms_threshold"]
     max_per_image = configs["db"]["max_per_image"]
     nms_algorithm = {
@@ -132,17 +140,19 @@ if __name__ == "__main__":
     mean = np.array([0.40789654, 0.44719302, 0.47026115], dtype=np.float32)
     std  = np.array([0.28863828, 0.27408164, 0.27809835], dtype=np.float32)
     top_bboxes = {}
-
+    # print("[demo] args.demo", args.demo, "os.path.isdir(args.demo)", os.path.isdir(args.demo))
     if os.path.isdir(args.demo):
         image_names = []
         ls = os.listdir(args.demo)
+        # print("os.listdir(args.demo)", ls)
         for file_name in sorted(ls):
             ext = file_name[file_name.rfind('.') + 1:].lower()
             if ext in image_ext:
                 image_names.append(os.path.join(args.demo, file_name))
     else:
         image_names = [args.demo]
-
+    # print("[demo] image_names", image_names, "args.demo", args.demo,
+    #     "os.path.isdir(args.demo)", os.path.isdir(args.demo),"args", args)
     for image_id, image_name in enumerate(image_names):
         print('Running ', image_name)
         image      = cv2.imread(image_name)
@@ -182,10 +192,12 @@ if __name__ == "__main__":
 
             images = np.concatenate((images, images[:, :, :, ::-1]), axis=0)
             images = torch.from_numpy(images)
+            # print("[demo] scales", scales)
             dets   = kp_decode(
                 nnet, images, K, aggr_weight=aggr_weight, 
                 scores_thresh=scores_thresh, center_thresh=center_thresh,
                 kernel=nms_kernel, debug=True)
+            
             dets   = dets.reshape(2, -1, 14)
             dets[1, :, [0, 2]] = out_width - dets[1, :, [2, 0]]
             dets[1, :, [5, 7, 9, 11]] = out_width - dets[1, :, [5, 7, 9, 11]]
@@ -249,7 +261,8 @@ if __name__ == "__main__":
             input_image   = image.copy()
             mask_image    = image.copy()
             bboxes = {}
-            for j in range(1, categories + 1):
+            print("[demo] categories", categories)
+            for j in range(1, categories ):
                 keep_inds = (top_bboxes[image_id][j][:, 4] > 0.5)
                 cat_name  = class_name[j]
                 for bbox in top_bboxes[image_id][j][keep_inds]:
@@ -264,8 +277,7 @@ if __name__ == "__main__":
                                       bbox[2] - bbox[0], bbox[3] - bbox[1]))
                     image = vis_class(image, 
                                       (bbox[0], bbox[1] - 2), txt)
-                    image = vis_octagon(
-                        image, ex, color_mask)
+                    image = vis_octagon( image, ex, color_mask)
                     image = vis_ex(image, ex, color_mask)
 
                     if args.show_mask:
@@ -278,11 +290,12 @@ if __name__ == "__main__":
                         mask_image = vis_class(mask_image, 
                                                (bbox[0], bbox[1] - 2), txt)
                         mask_image = vis_mask(mask_image, mask, color_mask)
-
+            #yezheng: comment out
             if args.show_mask:
                 cv2.imshow('mask', mask_image)
-            cv2.imshow('out', image)
-            cv2.waitKey()
+            # cv2.imshow('out', image)
+            # cv2.waitKey()
+            cv2.imwrite("out_images/out_"+ image_name.split('/')[-1], mask_image)
 
 
 

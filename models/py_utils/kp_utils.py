@@ -433,6 +433,16 @@ def _neg_loss(preds, gt):
 
     loss = 0
     for pred in preds:
+        # print("[kp_utils.py _neg_loss] pred", pred.shape, type(pred), 
+        #     "pos_inds", pos_inds.shape, type(pos_inds), "torch.max(pos_inds)", torch.max(pos_inds))
+#  [kp_utils.py _neg_loss] pred
+# torch.Size([4, 80, 128, 128])
+# <class 'torch.Tensor'>
+# pos_inds
+# torch.Size([4, 2, 128, 128])
+# <class 'torch.Tensor'>
+# torch.max(pos_inds)
+# tensor(1, device='cuda:0', dtype=torch.uint8)
         pos_pred = pred[pos_inds]
         neg_pred = pred[neg_inds]
 
@@ -451,6 +461,10 @@ def _neg_loss(preds, gt):
 
 
 def _sigmoid(x):
+    #tensor .sigmoid_() function
+    # print("[kp_utils.py _sigmoid] x", type(x), x.shape)
+    #     <class 'torch.Tensor'>
+    # torch.Size([5, 80, 128, 128])
     x = torch.clamp(x.sigmoid_(), min=1e-4, max=1-1e-4)
     return x
 

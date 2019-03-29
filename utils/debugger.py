@@ -86,6 +86,9 @@ color_list = np.array(
             0.50, 0.5, 0
         ]
     ).astype(np.float32)
+
+
+
 color_list = color_list.reshape((-1, 3)) * 255
   
 def show_2d(img, points, c, edges):
@@ -140,11 +143,16 @@ class Debugger(object):
     self.imgs[imgId] = self.imgs[imgId].astype(np.uint8)
 
   def gen_colormap(self, img, s=4):
-    num_classes = len(self.colors)
+    num_classes = 80 #2 #80 # len(self.colors) #yezheng: this needs to be automatically done
     img[img < 0] = 0
     h, w = img.shape[1], img.shape[2]
     color_map = np.zeros((h*s, w*s, 3), dtype=np.uint8)
+    # print("[debugger.py Debugger gen_colormap] num_classes", num_classes)
+    # print("[debugger.py Debugger gen_colormap] img",img.shape)
+    # num_classes 80
+    # [debugger.py Debugger gen_colormap] img (2, 96, 192)
     for i in range(num_classes):
+
       resized = cv2.resize(img[i], (w*s, h*s)).reshape(h*s, w*s, 1)
       cl =  self.colors[i]
       color_map = np.maximum(color_map, (resized * cl).astype(np.uint8))

@@ -1,7 +1,7 @@
 {
     "system": {
         "dataset": "medicalExtreme",
-        "batch_size": 14,
+        "batch_size": 11,
         "sampling_function": "kp_detection",
 
         "train_split": "train",
@@ -19,7 +19,7 @@
         "stepsize": 200000,
         "snapshot": 1000,
 
-        "chunk_sizes": [4,5,5],
+        "chunk_sizes": [5,6],
 
         "data_dir": "./data",
 
@@ -44,7 +44,7 @@
         "test_scales": [1],
 
         "top_k": 40,
-        "categories": 80,
+        "categories": 2,
         "aggr_weight": 0.1,
         "scores_thresh": 0.1,
         "center_thresh": 0.1,

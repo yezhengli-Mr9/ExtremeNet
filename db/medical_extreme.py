@@ -158,6 +158,8 @@ class medicalExtreme(DETECTION):
 
     def detections(self, ind):
         image_id = self._image_ids[ind]
+        # print("[medical_extreme.py medicalExtreme detections] self._detections", 
+            # self._detections, "image_id", image_id)
         detections = self._detections[image_id]
         extreme_pts = self._extreme_pts[image_id]
 

@@ -5,7 +5,7 @@ class DETECTION(BASE):
     def __init__(self, db_config):
         super(DETECTION, self).__init__()
 
-        self._configs["categories"]      = 80
+        self._configs["categories"]      = db_config["categories"] #80
         self._configs["rand_scales"]     = [1]
         self._configs["rand_scale_min"]  = 0.8
         self._configs["rand_scale_max"]  = 1.4

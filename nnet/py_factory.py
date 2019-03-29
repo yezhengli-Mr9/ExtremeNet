@@ -112,8 +112,8 @@ class NetworkFactory(object):
         with torch.no_grad():
             if torch.cuda.is_available():
                 xs = [x.cuda(non_blocking=True) for x in xs]
-            print("[NetworkFactory test] list len(xs)", len(xs),
-                "xs[0]",xs[0].shape, type(xs[0]) )#, "self.model", self.model)
+            # print("[NetworkFactory test] list len(xs)", len(xs),
+            #     "xs[0]",xs[0].shape, type(xs[0]) )#, "self.model", self.model)
             return self.model(*xs, **kwargs)
 
 

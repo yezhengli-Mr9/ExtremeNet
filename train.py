@@ -151,6 +151,8 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
         nnet.load_params(start_iter)
         nnet.set_lr(learning_rate)
         print("training starts from iteration {} with learning_rate {}".format(start_iter + 1, learning_rate))
+        print_log("training starts from iteration {} with learning_rate {}".format(start_iter + 1, learning_rate),
+            system_configs)
     else:
         nnet.set_lr(learning_rate)
 
@@ -167,6 +169,9 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
             if display and iteration % display == 0:
                 print("training loss at iteration {}: {:.6f} ({:.6f})".format(
                     iteration, training_loss.item(), avg_loss.avg))
+                print_log("training loss at iteration {}: {:.6f} ({:.6f})".format(
+                    iteration, training_loss.item(), avg_loss.avg),
+                system_configs)
             del training_loss
 
             # if val_iter and validation_db.db_inds.size and iteration % val_iter == 0:

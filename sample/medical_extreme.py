@@ -94,7 +94,7 @@ def kp_detection(db, k_ind, data_aug, debug):
 
         # reading detections
         detections, extreme_pts = db.detections(db_ind)
-
+        # print("[kp_detection] detections", detections)
         # cropping an image randomly
         if rand_crop:
             image, detections, extreme_pts = random_crop_pts(
@@ -175,6 +175,8 @@ def kp_detection(db, k_ind, data_aug, debug):
                     radius = max(0, int(radius))
                 else:
                     radius = gaussian_rad
+                # print("[kp_detection], t_heatmaps",t_heatmaps.shape,"b_ind",b_ind,
+                #  "category", category,"[xt, yt]", [xt, yt], "radius", radius)
                 draw_gaussian(t_heatmaps[b_ind, category], [xt, yt], radius)
                 draw_gaussian(l_heatmaps[b_ind, category], [xl, yl], radius)
                 draw_gaussian(b_heatmaps[b_ind, category], [xb, yb], radius)
