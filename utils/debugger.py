@@ -143,7 +143,8 @@ class Debugger(object):
     self.imgs[imgId] = self.imgs[imgId].astype(np.uint8)
 
   def gen_colormap(self, img, s=4):
-    num_classes = 80 #2 #80 # len(self.colors) #yezheng: this needs to be automatically done
+    # print("__name__",__name__) #__name__ utils.debugger
+    num_classes = 2#80 #80 # len(self.colors) #yezheng: this needs to be automatically done
     img[img < 0] = 0
     h, w = img.shape[1], img.shape[2]
     color_map = np.zeros((h*s, w*s, 3), dtype=np.uint8)

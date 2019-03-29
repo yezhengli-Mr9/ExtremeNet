@@ -40,7 +40,7 @@ torch.backends.cudnn.benchmark = False
 #     'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 # ]
 
-class_name = ["spin_cord", "probe_right"]
+class_name = ['__background__', "probe_right", "spin_cord"]
 
 image_ext = ['jpg', 'jpeg', 'png', 'webp']
 
@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument("--demo", help="demo image path or folders",
                         default="data/medical_img/test2017", type=str)
     parser.add_argument("--model_path",
-                        default='cache/nnet/medical_ExtremeNet/medical_ExtremeNet_1000.pkl')
+                        default='cache/nnet/medical_ExtremeNet/medical_ExtremeNet_3000.pkl')
     parser.add_argument("--show_mask", action='store_true',
                         help="Run Deep extreme cut to obtain accurate mask")
 
@@ -261,7 +261,7 @@ if __name__ == "__main__":
             input_image   = image.copy()
             mask_image    = image.copy()
             bboxes = {}
-            print("[demo] categories", categories)
+            # print("[demo] categories", categories)
             for j in range(1, categories ):
                 keep_inds = (top_bboxes[image_id][j][:, 4] > 0.5)
                 cat_name  = class_name[j]
@@ -295,7 +295,7 @@ if __name__ == "__main__":
                 cv2.imshow('mask', mask_image)
             # cv2.imshow('out', image)
             # cv2.waitKey()
-            cv2.imwrite("out_images/out_"+ image_name.split('/')[-1], mask_image)
+            cv2.imwrite("out_images/"+ image_name.split('/')[-1].split('.')[0]+"_out.png", image)
 
 
 

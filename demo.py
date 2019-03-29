@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument("--cfg_file", help="config file", 
                         default='ExtremeNet', type=str)
     parser.add_argument("--demo", help="demo image path or folders",
-                        default="", type=str)
+                        default="images", type=str)
     parser.add_argument("--model_path",
                         default='cache/ExtremeNet_250000.pkl')
     parser.add_argument("--show_mask", action='store_true',
@@ -133,9 +133,11 @@ if __name__ == "__main__":
     std  = np.array([0.28863828, 0.27408164, 0.27809835], dtype=np.float32)
     top_bboxes = {}
 
+    # print("[demo] args.demo", args.demo, "os.path.isdir(args.demo)", os.path.isdir(args.demo))
     if os.path.isdir(args.demo):
         image_names = []
         ls = os.listdir(args.demo)
+        # print("os.listdir(args.demo)", ls)
         for file_name in sorted(ls):
             ext = file_name[file_name.rfind('.') + 1:].lower()
             if ext in image_ext:
@@ -279,10 +281,11 @@ if __name__ == "__main__":
                                                (bbox[0], bbox[1] - 2), txt)
                         mask_image = vis_mask(mask_image, mask, color_mask)
 
-            if args.show_mask:
-                cv2.imshow('mask', mask_image)
-            cv2.imshow('out', image)
-            cv2.waitKey()
+            # if args.show_mask:
+            #     cv2.imshow('mask', mask_image)
+            # cv2.imshow('out', image)
+            # cv2.waitKey()
+            cv2.imwrite("out_images/"+ image_name.split('/')[-1].split('.')[0]+"_out.jpg", image)
 
 
 
