@@ -13,12 +13,13 @@ def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
 class model(exkp):
     def __init__(self, db):
         n       = 5
-        dims    = [256, 256, 384, 384, 384, 512]
+        dims    = [256, 256, 384, 384, 384, 512] #yezheng: I do not even know what does these numbers mean?
         modules = [2, 2, 2, 2, 2, 4]
         out_dim = db.configs["categories"] #80
 
         super(model, self).__init__(
-            n, 2, dims, modules, out_dim, # make_tl_layer=None, # make_br_layer=None,
+            n, 2, dims, modules, out_dim, 
+             make_tl_layer=None,  make_br_layer=None,
             make_hg_layer=make_hg_layer,
             kp_layer=residual, cnv_dim=256
         )

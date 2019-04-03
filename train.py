@@ -70,7 +70,7 @@ def prefetch_data(db, queue, sample_data, data_aug, debug=False):
 def pin_memory(data_queue, pinned_data_queue, sema):
     while True:
         data = data_queue.get()
-
+        # if configs["cuda_flag"]:#yezheng  
         data["xs"] = [x.pin_memory() for x in data["xs"]]
         data["ys"] = [y.pin_memory() for y in data["ys"]]
 
@@ -157,7 +157,7 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
         nnet.set_lr(learning_rate)
 
     print("training start...")
-    if configs["cuda_flag"]:
+    if torch.cuda.is_available() and configs["cuda_flag"]:
         nnet.cuda()
     nnet.train_mode()
     avg_loss = AverageMeter()
