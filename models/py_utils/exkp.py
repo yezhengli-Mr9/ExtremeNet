@@ -15,10 +15,15 @@ from utils.debugger import Debugger
 
 class kp_module(nn.Module):
     def __init__(
+<<<<<<< HEAD
         self, n, dims, modules, layer=residual,
         make_up_layer=make_layer, make_low_layer=make_layer,
         make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
         make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
+=======
+        self, n, dims, modules, make_hg_layer, layer=residual, #make_up_layer=make_layer, make_low_layer=make_layer,
+         make_hg_layer_revr=make_layer_revr,
+>>>>>>> 2db64b312b37b1400321617339731fab604da247
         make_merge_layer=make_merge_layer, **kwargs
     ):
         super(kp_module, self).__init__()
@@ -32,7 +37,7 @@ class kp_module(nn.Module):
         next_dim = dims[1]
         # print("[exkp.py kp_module __init__] curr_dim", curr_dim, "next_dim", next_dim)
 
-        self.up1  = make_up_layer(
+        self.up1  = make_layer(
             3, curr_dim, curr_dim, curr_mod, 
             layer=layer, **kwargs
         )  
@@ -42,9 +47,7 @@ class kp_module(nn.Module):
             layer=layer, **kwargs
         )
         self.low2 = kp_module(
-            n - 1, dims[1:], modules[1:], layer=layer, 
-            make_up_layer=make_up_layer, 
-            make_low_layer=make_low_layer,
+            n - 1, dims[1:], modules[1:], layer=layer,  #make_up_layer=make_up_layer,  #make_low_layer=make_low_layer,
             make_hg_layer=make_hg_layer,
             make_hg_layer_revr=make_hg_layer_revr,
             make_pool_layer=make_pool_layer,
@@ -86,10 +89,15 @@ class exkp(nn.Module):
         self, n, nstack, dims, modules, out_dim, pre=None, cnv_dim=256, 
         make_tl_layer=None, make_br_layer=None,
         make_cnv_layer=make_cnv_layer, make_heat_layer=make_kp_layer,
+<<<<<<< HEAD
         make_tag_layer=make_kp_layer, make_regr_layer=make_kp_layer,
         make_up_layer=make_layer, make_low_layer=make_layer, 
         make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
         make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
+=======
+        make_tag_layer=make_kp_layer, make_regr_layer=make_kp_layer, #make_up_layer=make_layer, make_low_layer=make_layer, 
+        make_hg_layer_revr=make_layer_revr,
+>>>>>>> 2db64b312b37b1400321617339731fab604da247
         make_merge_layer=make_merge_layer, make_inter_layer=make_inter_layer, 
         kp_layer=residual
     ):
@@ -107,9 +115,7 @@ class exkp(nn.Module):
 
         self.kps  = nn.ModuleList([
             kp_module(
-                n, dims, modules, layer=kp_layer,
-                make_up_layer=make_up_layer,
-                make_low_layer=make_low_layer,
+                n, dims, modules, layer=kp_layer, #make_up_layer=make_up_layer, make_low_layer=make_low_layer,
                 make_hg_layer=make_hg_layer,
                 make_hg_layer_revr=make_hg_layer_revr,
                 make_pool_layer=make_pool_layer,
