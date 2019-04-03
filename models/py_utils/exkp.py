@@ -14,8 +14,7 @@ from utils.debugger import Debugger # yezheng: where is this one? -- in the ROOT
 
 class kp_module(nn.Module):#yezheng: this is identical to the one in CornerNet
     def __init__(
-        self, n, dims, modules, make_hg_layer, layer=residual,
-        make_up_layer=make_layer, make_low_layer=make_layer,
+        self, n, dims, modules, make_hg_layer, layer=residual, #make_up_layer=make_layer, make_low_layer=make_layer,
          make_hg_layer_revr=make_layer_revr,
         make_merge_layer=make_merge_layer, **kwargs
     ):
@@ -29,7 +28,7 @@ class kp_module(nn.Module):#yezheng: this is identical to the one in CornerNet
         curr_dim = dims[0]
         next_dim = dims[1]
 
-        self.up1  = make_up_layer(
+        self.up1  = make_layer(
             3, curr_dim, curr_dim, curr_mod, 
             layer=layer, **kwargs
         )  
@@ -39,9 +38,7 @@ class kp_module(nn.Module):#yezheng: this is identical to the one in CornerNet
             layer=layer, **kwargs
         )
         self.low2 = kp_module(
-            n - 1, dims[1:], modules[1:], layer=layer, 
-            make_up_layer=make_up_layer, 
-            make_low_layer=make_low_layer,
+            n - 1, dims[1:], modules[1:], layer=layer,  #make_up_layer=make_up_layer,  #make_low_layer=make_low_layer,
             make_hg_layer=make_hg_layer,
             make_hg_layer_revr=make_hg_layer_revr,
             make_merge_layer=make_merge_layer,
@@ -74,8 +71,7 @@ class exkp(nn.Module): #yezheng: this is made by Xinyi Zhou, not appeared in Cor
         self, n, nstack, dims, modules, out_dim, make_hg_layer,
         pre=None, cnv_dim=256, #make_tl_layer=None, make_br_layer=None,
         make_cnv_layer=make_cnv_layer, make_heat_layer=make_kp_layer,
-        make_tag_layer=make_kp_layer, make_regr_layer=make_kp_layer,
-        make_up_layer=make_layer, make_low_layer=make_layer, 
+        make_tag_layer=make_kp_layer, make_regr_layer=make_kp_layer, #make_up_layer=make_layer, make_low_layer=make_layer, 
         make_hg_layer_revr=make_layer_revr,
         make_merge_layer=make_merge_layer, make_inter_layer=make_inter_layer, 
         kp_layer=residual
@@ -94,9 +90,7 @@ class exkp(nn.Module): #yezheng: this is made by Xinyi Zhou, not appeared in Cor
         #yezheng: what does self.kps do? -- key points
         self.kps  = nn.ModuleList([
             kp_module(
-                n, dims, modules, layer=kp_layer,
-                make_up_layer=make_up_layer,
-                make_low_layer=make_low_layer,
+                n, dims, modules, layer=kp_layer, #make_up_layer=make_up_layer, make_low_layer=make_low_layer,
                 make_hg_layer=make_hg_layer,
                 make_hg_layer_revr=make_hg_layer_revr,
                 make_merge_layer=make_merge_layer
