@@ -177,6 +177,46 @@ def kp_detection(db, k_ind, data_aug, debug):
                     radius = gaussian_rad
                 # print("[kp_detection], t_heatmaps",t_heatmaps.shape,"b_ind",b_ind,
                 #  "category", category,"[xt, yt]", [xt, yt], "radius", radius)
+
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 5 category 2 [xt, yt] [79, 63] radius 2
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 5 category 1 [xt, yt] [79, 65] radius 7
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 3 category 0 [xt, yt] [1, 63] radius 13
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 7 category 0 [xt, yt] [49, 53] radius 6
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 7 category 1 [xt, yt] [0, 75] radius 10
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 4 category 0 [xt, yt] [53, 59] radius 4
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 6 category 0 [xt, yt] [0, 36] radius 5
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 6 category 2 [xt, yt] [81, 46] radius 4
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 5 category 0 [xt, yt] [127, 57] radius 5
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 5 category 2 [xt, yt] [50, 59] radius 3
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 7 category 0 [xt, yt] [65, 43] radius 6
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 7 category 2 [xt, yt] [0, 66] radius 2
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 7 category 1 [xt, yt] [6, 63] radius 13
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 8 category 0 [xt, yt] [68, 73] radius 5
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 6 category 0 [xt, yt] [44, 47] radius 7
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 8 category 0 [xt, yt] [127, 45] radius 9
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 8 category 2 [xt, yt] [57, 82] radius 6
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 7 category 0 [xt, yt] [100, 50] radius 8
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 7 category 2 [xt, yt] [7, 84] radius 3
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 7 category 1 [xt, yt] [12, 79] radius 15
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 9 category 0 [xt, yt] [46, 40] radius 6
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 9 category 2 [xt, yt] [110, 66] radius 2
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 9 category 1 [xt, yt] [108, 62] radius 12
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 10 category 0 [xt, yt] [127, 45] radius 5
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 10 category 2 [xt, yt] [59, 66] radius 3
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 10 category 1 [xt, yt] [98, 63] radius 8
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 9 category 0 [xt, yt] [0, 41] radius 4
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 9 category 2 [xt, yt] [40, 64] radius 2
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 9 category 1 [xt, yt] [39, 60] radius 7
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 10 category 0 [xt, yt] [0, 51] radius 12
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 10 category 2 [xt, yt] [127, 55] radius 2
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 8 category 0 [xt, yt] [0, 49] radius 5
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 8 category 2 [xt, yt] [89, 69] radius 2
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 8 category 1 [xt, yt] [55, 65] radius 9
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 9 category 0 [xt, yt] [0, 22] radius 3
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 9 category 2 [xt, yt] [88, 35] radius 6
+# [kp_detection], t_heatmaps (11, 3, 128, 128) b_ind 10 category 0 [xt, yt] [83, 51] radius 4
+
+                #yezheng: draw_gaussian(does not return anything)
                 draw_gaussian(t_heatmaps[b_ind, category], [xt, yt], radius)
                 draw_gaussian(l_heatmaps[b_ind, category], [xl, yl], radius)
                 draw_gaussian(b_heatmaps[b_ind, category], [xb, yb], radius)
@@ -187,6 +227,31 @@ def kp_detection(db, k_ind, data_aug, debug):
                 l_heatmaps[b_ind, category, yl, xl] = 1
                 b_heatmaps[b_ind, category, yb, xb] = 1
                 r_heatmaps[b_ind, category, yr, xr] = 1
+#             print("[kp_detection], t_heatmaps",np.sum(t_heatmaps),
+#                 "l_heatmaps", np.sum(l_heatmaps), "b_heatmaps", np.sum(b_heatmaps) )
+
+#  [kp_detection], t_heatmaps 89.74134 l_heatmaps 73.33087 b_heatmaps 81.54751
+# [kp_detection], t_heatmaps 91.35594 l_heatmaps 74.773506 b_heatmaps 82.99014
+# [kp_detection], t_heatmaps 120.70633 l_heatmaps 104.12389 b_heatmaps 112.34053
+# [kp_detection], t_heatmaps 138.09032 l_heatmaps 133.47427 b_heatmaps 141.69092
+# [kp_detection], t_heatmaps 152.16406 l_heatmaps 142.3869 b_heatmaps 155.76468
+# [kp_detection], t_heatmaps 228.73175 l_heatmaps 218.95456 b_heatmaps 232.33237
+# [kp_detection], t_heatmaps 249.74953 l_heatmaps 239.97234 b_heatmaps 253.35014
+# [kp_detection], t_heatmaps 252.96764 l_heatmaps 244.32278 b_heatmaps 257.7006
+# [kp_detection], t_heatmaps 344.81143 l_heatmaps 336.1666 b_heatmaps 349.54437
+# [kp_detection], t_heatmaps 365.82922 l_heatmaps 357.1844 b_heatmaps 370.56216
+# [kp_detection], t_heatmaps 404.90088 l_heatmaps 396.25604 b_heatmaps 409.63382
+# [kp_detection], t_heatmaps 408.119 l_heatmaps 399.47415 b_heatmaps 413.98428
+# [kp_detection], t_heatmaps 554.1235 l_heatmaps 545.2966 b_heatmaps 559.9888
+# [kp_detection], t_heatmaps 575.14124 l_heatmaps 566.31433 b_heatmaps 581.00653
+# [kp_detection], t_heatmaps 578.3594 l_heatmaps 569.5325 b_heatmaps 585.357
+# [kp_detection], t_heatmaps 601.02057 l_heatmaps 592.19366 b_heatmaps 624.4286
+# [kp_detection], t_heatmaps 609.5387 l_heatmaps 600.71185 b_heatmaps 632.9467
+# [kp_detection], t_heatmaps 626.92267 l_heatmaps 618.0958 b_heatmaps 662.2971
+# [kp_detection], t_heatmaps 635.4408 l_heatmaps 626.61395 b_heatmaps 670.81525
+# [kp_detection], t_heatmaps 743.9494 l_heatmaps 686.07666 b_heatmaps 730.27795
+# [kp_detection], t_heatmaps 773.2998 l_heatmaps 715.42706 b_heatmaps 759.62836
+# [kp_detection], t_heatmaps 881.32434 l_heatmaps 823.93567 b_heatmaps 868.136
 
             tag_ind = tag_lens[b_ind]
             t_regrs[b_ind, tag_ind, :] = [fxt - xt, fyt - yt]

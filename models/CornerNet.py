@@ -42,19 +42,19 @@ class pool(nn.Module):
         conv2 = self.conv2(relu1)
         return conv2
 
-class tl_pool(pool):
-    def __init__(self, dim):
-        super(tl_pool, self).__init__(dim, TopPool, LeftPool)
+# class tl_pool(pool):
+#     def __init__(self, dim):
+#         super(tl_pool, self).__init__(dim, TopPool, LeftPool)
 
-class br_pool(pool):
-    def __init__(self, dim):
-        super(br_pool, self).__init__(dim, BottomPool, RightPool)
+# class br_pool(pool):
+#     def __init__(self, dim):
+#         super(br_pool, self).__init__(dim, BottomPool, RightPool)
 
-def make_tl_layer(dim):
-    return tl_pool(dim)
+# def make_tl_layer(dim):
+#     return tl_pool(dim)
 
-def make_br_layer(dim):
-    return br_pool(dim)
+# def make_br_layer(dim):
+#     return br_pool(dim)
 
 def make_pool_layer(dim):
     return nn.Sequential()
@@ -72,9 +72,7 @@ class model(kp):
         out_dim = 80
 
         super(model, self).__init__(
-            n, 2, dims, modules, out_dim,
-            make_tl_layer=make_tl_layer,
-            make_br_layer=make_br_layer,
+            n, 2, dims, modules, out_dim, # make_tl_layer=make_tl_layer, # make_br_layer=make_br_layer,
             make_pool_layer=make_pool_layer,
             make_hg_layer=make_hg_layer,
             kp_layer=residual, cnv_dim=256

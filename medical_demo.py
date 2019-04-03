@@ -119,8 +119,8 @@ if __name__ == "__main__":
         "linear_soft_nms": 1, 
         "exp_soft_nms": 2
     }["exp_soft_nms"]
-    # if args.show_mask:
-    dextr = Dextr()
+    if args.show_mask:
+        dextr = Dextr()
 
 
     mean = np.array([0.40789654, 0.44719302, 0.47026115], dtype=np.float32)

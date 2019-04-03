@@ -41,17 +41,19 @@ class DummyModule(nn.Module):
         return self.module(*xs, **kwargs)
 
 class NetworkFactory(object):
-    def __init__(self, db):
+    def __init__(self, db, cuda_flag):
         super(NetworkFactory, self).__init__()
         # print("[NetworkFactory __init__] db", db )
         module_file = "models.{}".format(system_configs.snapshot_name)
         # print("[NetworkFactory __init__] module_file: {}".format(module_file))
+        # [NetworkFactory __init__] module_file: models.medical_ExtremeNet
         nnet_module = importlib.import_module(module_file)
         # print("[NetworkFactory __init__] nnet_module", nnet_module)
         self.model   = DummyModule(nnet_module.model(db))
         self.loss    = nnet_module.loss # yezheng: this is last line in models/ExtremeNet.py
         self.network = Network(self.model, self.loss)
         self.network = DataParallel(self.network, chunk_sizes=system_configs.chunk_sizes)
+        self.cuda_flag = cuda_flag
 
         total_params = 0
         for params in self.model.parameters():
@@ -87,7 +89,7 @@ class NetworkFactory(object):
         self.network.eval()
 
     def train(self, xs, ys, **kwargs):
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and self.cuda_flag:
             xs = [x.cuda(non_blocking=True) for x in xs]
             ys = [y.cuda(non_blocking=True) for y in ys]
 
@@ -100,8 +102,9 @@ class NetworkFactory(object):
 
     def validate(self, xs, ys, **kwargs):
         with torch.no_grad():
-            xs = [x.cuda(non_blocking=True) for x in xs]
-            ys = [y.cuda(non_blocking=True) for y in ys]
+            if torch.cuda.is_available() and self.cuda_flag:
+                xs = [x.cuda(non_blocking=True) for x in xs]
+                ys = [y.cuda(non_blocking=True) for y in ys]
 
             loss = self.network(xs, ys)
             loss = loss.mean()
@@ -110,7 +113,7 @@ class NetworkFactory(object):
     def test(self, xs, **kwargs):
         
         with torch.no_grad():
-            if torch.cuda.is_available():
+            if torch.cuda.is_available() and self.cuda_flag:
                 xs = [x.cuda(non_blocking=True) for x in xs]
             # print("[NetworkFactory test] list len(xs)", len(xs),
             #     "xs[0]",xs[0].shape, type(xs[0]) )#, "self.model", self.model)
@@ -125,7 +128,7 @@ class NetworkFactory(object):
     def load_pretrained_params(self, pretrained_model):
         print("loading from {}".format(pretrained_model))
         with open(pretrained_model, "rb") as f:
-            if torch.cuda.is_available():
+            if torch.cuda.is_available() and self.cuda_flag:
                 params = torch.load(f)
             else:
                 params = torch.load(f, map_location = 'cpu')

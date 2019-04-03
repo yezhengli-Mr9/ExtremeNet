@@ -18,10 +18,7 @@ class model(exkp):
         out_dim = db.configs["categories"] #80
 
         super(model, self).__init__(
-            n, 2, dims, modules, out_dim,
-            make_tl_layer=None,
-            make_br_layer=None,
-            make_pool_layer=make_pool_layer,
+            n, 2, dims, modules, out_dim, # make_tl_layer=None, # make_br_layer=None,
             make_hg_layer=make_hg_layer,
             kp_layer=residual, cnv_dim=256
         )

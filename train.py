@@ -137,7 +137,7 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
     # validation_pin_thread.start()
 
     print("building model...")
-    nnet = NetworkFactory(training_dbs[0])
+    nnet = NetworkFactory(training_dbs[0], configs["cuda_flag"])
     print("[train] pretrained_model", pretrained_model)
     if pretrained_model is not None:
         if not os.path.exists(pretrained_model):
@@ -157,7 +157,8 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
         nnet.set_lr(learning_rate)
 
     print("training start...")
-    nnet.cuda()
+    if configs["cuda_flag"]:
+        nnet.cuda()
     nnet.train_mode()
     avg_loss = AverageMeter()
     with stdout_to_tqdm() as save_stdout:

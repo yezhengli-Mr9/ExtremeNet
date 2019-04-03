@@ -8,17 +8,15 @@ from .utils import make_layer, make_layer_revr
 from .kp_utils import _tranpose_and_gather_feat, _exct_decode
 from .kp_utils import _sigmoid, _regr_loss, _neg_loss
 from .kp_utils import make_kp_layer
-from .kp_utils import make_pool_layer, make_unpool_layer
 from .kp_utils import make_merge_layer, make_inter_layer, make_cnv_layer
 from .kp_utils import _h_aggregate, _v_aggregate
 from utils.debugger import Debugger # yezheng: where is this one? -- in the ROOT directory
 
 class kp_module(nn.Module):#yezheng: this is identical to the one in CornerNet
     def __init__(
-        self, n, dims, modules, layer=residual,
+        self, n, dims, modules, make_hg_layer, layer=residual,
         make_up_layer=make_layer, make_low_layer=make_layer,
-        make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
-        make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
+         make_hg_layer_revr=make_layer_revr,
         make_merge_layer=make_merge_layer, **kwargs
     ):
         super(kp_module, self).__init__()
@@ -35,7 +33,7 @@ class kp_module(nn.Module):#yezheng: this is identical to the one in CornerNet
             3, curr_dim, curr_dim, curr_mod, 
             layer=layer, **kwargs
         )  
-        self.max1 = make_pool_layer(curr_dim)
+        self.max1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.low1 = make_hg_layer(
             3, curr_dim, next_dim, curr_mod,
             layer=layer, **kwargs
@@ -46,8 +44,6 @@ class kp_module(nn.Module):#yezheng: this is identical to the one in CornerNet
             make_low_layer=make_low_layer,
             make_hg_layer=make_hg_layer,
             make_hg_layer_revr=make_hg_layer_revr,
-            make_pool_layer=make_pool_layer,
-            make_unpool_layer=make_unpool_layer,
             make_merge_layer=make_merge_layer,
             **kwargs
         ) if self.n > 1 else \
@@ -59,7 +55,7 @@ class kp_module(nn.Module):#yezheng: this is identical to the one in CornerNet
             3, next_dim, curr_dim, curr_mod,
             layer=layer, **kwargs
         )
-        self.up2  = make_unpool_layer(curr_dim)
+        self.up2  = nn.Upsample(scale_factor=2)
 
         self.merge = make_merge_layer(curr_dim)
 
@@ -75,13 +71,12 @@ class kp_module(nn.Module):#yezheng: this is identical to the one in CornerNet
 
 class exkp(nn.Module): #yezheng: this is made by Xinyi Zhou, not appeared in CornerNet
     def __init__(
-        self, n, nstack, dims, modules, out_dim, pre=None, cnv_dim=256, 
-        make_tl_layer=None, make_br_layer=None,
+        self, n, nstack, dims, modules, out_dim, make_hg_layer,
+        pre=None, cnv_dim=256, #make_tl_layer=None, make_br_layer=None,
         make_cnv_layer=make_cnv_layer, make_heat_layer=make_kp_layer,
         make_tag_layer=make_kp_layer, make_regr_layer=make_kp_layer,
         make_up_layer=make_layer, make_low_layer=make_layer, 
-        make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
-        make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
+        make_hg_layer_revr=make_layer_revr,
         make_merge_layer=make_merge_layer, make_inter_layer=make_inter_layer, 
         kp_layer=residual
     ):
@@ -93,7 +88,7 @@ class exkp(nn.Module): #yezheng: this is made by Xinyi Zhou, not appeared in Cor
         curr_dim = dims[0]
         #yezheng: what does self.pre do?
         self.pre = nn.Sequential(
-            convolution(7, 3, 128, stride=2),
+            convolution(1, 3, 128, stride=2),
             residual(3, 128, 256, stride=2)
         ) if pre is None else pre
         #yezheng: what does self.kps do? -- key points
@@ -104,8 +99,6 @@ class exkp(nn.Module): #yezheng: this is made by Xinyi Zhou, not appeared in Cor
                 make_low_layer=make_low_layer,
                 make_hg_layer=make_hg_layer,
                 make_hg_layer_revr=make_hg_layer_revr,
-                make_pool_layer=make_pool_layer,
-                make_unpool_layer=make_unpool_layer,
                 make_merge_layer=make_merge_layer
             ) for _ in range(nstack)
         ])

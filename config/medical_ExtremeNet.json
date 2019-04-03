@@ -1,7 +1,8 @@
 {
+    "cuda_flag":false,
     "system": {
         "dataset": "medicalExtreme",
-        "batch_size": 11,
+        "batch_size": 3,
         "sampling_function": "kp_detection",
 
         "train_split": "train",
@@ -19,7 +20,7 @@
         "stepsize": 200000,
         "snapshot": 200,
 
-        "chunk_sizes": [5,6],
+        "chunk_sizes": [1,1],
 
         "data_dir": "./data",
 

@@ -10,11 +10,11 @@ class MergeUp(nn.Module):
 def make_merge_layer(dim):
     return MergeUp()
 
-def make_tl_layer(dim):
-    return None
+# def make_tl_layer(dim):
+#     return None
 
-def make_br_layer(dim):
-    return None
+# def make_br_layer(dim):
+#     return None
 
 def make_pool_layer(dim):
     return nn.MaxPool2d(kernel_size=2, stride=2)
@@ -115,28 +115,6 @@ def _tranpose_and_gather_feat(feat, ind):
     feat = _gather_feat(feat, ind)
     return feat
 
-def _filter(heat, direction, val=0.1):
-    num_channels = heat.shape[1]
-    if direction == 'v':
-        kernel = torch.zeros((num_channels, num_channels, 3, 1))
-        for i in range(num_channels):
-            kernel[i, i, 0, 0] = val
-            kernel[i, i, 1, 0] = 1
-            kernel[i, i, 2, 0] = val
-        padding = (1, 0)
-    elif direction == 'h':
-        kernel = torch.zeros((num_channels, num_channels, 1, 3))
-        for i in range(num_channels):
-            kernel[i, i, 0, 0] = val
-            kernel[i, i, 0, 1] = 1
-            kernel[i, i, 0, 2] = val
-        padding = (0, 1)
-    else:
-        assert 0, direction
-
-    heat = nn.functional.conv2d(heat, kernel.cuda(), padding=padding)
-    # heat[heat > 1] = 1
-    return heat
 
 def _topk(scores, K=20):
     batch, cat, height, width = scores.size()
@@ -238,14 +216,6 @@ def _exct_decode(
 ):
     batch, cat, height, width = t_heat.size()
     
-    ''' 
-    filter_kernel = 0.1
-    t_heat = _filter(t_heat, direction='h', val=filter_kernel)
-    l_heat = _filter(l_heat, direction='v', val=filter_kernel)
-    b_heat = _filter(b_heat, direction='h', val=filter_kernel)
-    r_heat = _filter(r_heat, direction='v', val=filter_kernel)
-    '''
-
     t_heat = torch.sigmoid(t_heat)
     l_heat = torch.sigmoid(l_heat)
     b_heat = torch.sigmoid(b_heat)
