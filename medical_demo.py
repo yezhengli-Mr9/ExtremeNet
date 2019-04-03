@@ -100,6 +100,7 @@ if __name__ == "__main__":
         nnet.cuda()
     nnet.eval_mode()
 
+    print("[mecical_demo] nnet.features._modules.items()", nnet.features._modules.items())
     K             = configs["db"]["top_k"]
     aggr_weight   = configs["db"]["aggr_weight"]
     scores_thresh = configs["db"]["scores_thresh"]
