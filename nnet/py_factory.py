@@ -52,8 +52,10 @@ class NetworkFactory(object):
         self.model   = DummyModule(nnet_module.model(db))
         self.loss    = nnet_module.loss # yezheng: this is last line in models/ExtremeNet.py
         self.network = Network(self.model, self.loss)
-        self.network = DataParallel(self.network, chunk_sizes=system_configs.chunk_sizes)
         self.cuda_flag = cuda_flag
+        if self.cuda_flag:
+            self.network = DataParallel(self.network, chunk_sizes=system_configs.chunk_sizes)
+        
 
         total_params = 0
         for params in self.model.parameters():
@@ -139,7 +141,7 @@ class NetworkFactory(object):
         print("loading model from {}".format(cache_file))
         print_log("loading model from {}".format(cache_file), system_configs)
         with open(cache_file, "rb") as f:
-            if torch.cuda.is_available():
+            if torch.cuda.is_available()  and self.cuda_flag:
                 params = torch.load(f)
             else:
                 params = torch.load(f, map_location = 'cpu')

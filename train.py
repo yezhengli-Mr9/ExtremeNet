@@ -12,11 +12,10 @@ import importlib
 import threading
 import traceback
 
-from tqdm import tqdm
+import tqdm
 from utils import stdout_to_tqdm
 from config import system_configs
 from nnet.py_factory import NetworkFactory, print_log
-from torch.multiprocessing import Process, Queue, Pool
 from db.datasets import datasets
 
 torch.backends.cudnn.enabled   = True
@@ -70,18 +69,22 @@ def prefetch_data(db, queue, sample_data, data_aug, debug=False):
 def pin_memory(data_queue, pinned_data_queue, sema):
     while True:
         data = data_queue.get()
-
+        # if configs["cuda_flag"]:#yezheng  
         data["xs"] = [x.pin_memory() for x in data["xs"]]
         data["ys"] = [y.pin_memory() for y in data["ys"]]
 
         pinned_data_queue.put(data)
+
+        print("[train.py pin_memory VALUE] training_queue", training_queue.qsize(), 
+        "pinned_training_queue", pinned_training_queue.qsize(), 
+        "training_pin_semaphore", training_pin_semaphore._value)
 
         if sema.acquire(blocking=False):
             return
 
 def init_parallel_jobs(dbs, queue, fn, data_aug, debug=False):
     #=======
-    tasks = [Process(target=prefetch_data, 
+    tasks = [torch.multiprocessing.Process(target=prefetch_data, 
                      args=(db, queue, fn, data_aug, debug)) for db in dbs]
     for task in tasks:
         task.daemon = True
@@ -104,8 +107,8 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
     # validation_size = len(validation_db.db_inds)
 
     # queues storing data for training
-    training_queue   = Queue(system_configs.prefetch_size)
-    # validation_queue = Queue(5)
+    training_queue   = torch.multiprocessing.Queue(system_configs.prefetch_size)
+    # validation_queue = torch.multiprocessing.Queue(5)
 
     # queues storing pinned data for training
     pinned_training_queue   = queue.Queue(system_configs.prefetch_size)
@@ -124,13 +127,42 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
     training_pin_semaphore   = threading.Semaphore()
     # validation_pin_semaphore = threading.Semaphore()
     training_pin_semaphore.acquire()
+
     # validation_pin_semaphore.acquire()
-
-    training_pin_args   = (training_queue, pinned_training_queue, training_pin_semaphore)
-    training_pin_thread = threading.Thread(target=pin_memory, args=training_pin_args)
-    training_pin_thread.daemon = True
-    training_pin_thread.start()
-
+    
+    #-----------
+    # print("[train.py VALUE] training_queue", training_queue.qsize(), 
+    #     "pinned_training_queue", pinned_training_queue.qsize(), 
+    #     "training_pin_semaphore", training_pin_semaphore._value)
+    # [train.py VALUE] training_queue 0 pinned_training_queue 0 training_pin_semaphore 0
+    #-----------
+    # print("[train.py VALUE] training_queue", training_queue, 
+    #     "pinned_training_queue", pinned_training_queue, 
+    #     "training_pin_semaphore", training_pin_semaphore)
+    #-----------
+    # [train.py VALUE] training_queue <multiprocessing.queues.Queue object at 0x7f6fd53d8cf8> 
+    # pinned_training_queue <queue.Queue object at 0x7f6fd5267390> 
+    # training_pin_semaphore <threading.Semaphore object at 0x7f6fd5267470>
+    
+    # print("[train.py TYPE] training_queue", type(training_queue), 
+    #     "pinned_training_queue", type(pinned_training_queue), 
+    #     "training_pin_semaphore", type(training_pin_semaphore))
+    #-----------
+    # [train.py TYPE] training_queue <class 'multiprocessing.queues.Queue'> 
+    # pinned_training_queue <class 'queue.Queue'> 
+    # training_pin_semaphore <class 'threading.Semaphore'>
+    #-----------
+    if False:
+        training_pin_args   = (training_queue, pinned_training_queue, training_pin_semaphore)
+        training_pin_thread = threading.Thread(target=pin_memory, args=training_pin_args)
+        training_pin_thread.daemon = True
+        training_pin_thread.start()
+    #-----------
+    # print("[train.py VALUE] training_queue", training_queue.qsize(), 
+    #     "pinned_training_queue", pinned_training_queue.qsize(), 
+    #     "training_pin_semaphore", training_pin_semaphore._value)
+    # [train.py VALUE] training_queue 0 pinned_training_queue 0 training_pin_semaphore 0
+    #-----------
     # validation_pin_args   = (validation_queue, pinned_validation_queue, validation_pin_semaphore)
     # validation_pin_thread = threading.Thread(target=pin_memory, args=validation_pin_args)
     # validation_pin_thread.daemon = True
@@ -157,12 +189,12 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
         nnet.set_lr(learning_rate)
 
     print("training start...")
-    if configs["cuda_flag"]:
+    if torch.cuda.is_available() and configs["cuda_flag"]:
         nnet.cuda()
     nnet.train_mode()
     avg_loss = AverageMeter()
     with stdout_to_tqdm() as save_stdout:
-        for iteration in tqdm(range(start_iter + 1, max_iteration + 1), file=save_stdout, ncols=80):
+        for iteration in tqdm.tqdm(range(start_iter + 1, max_iteration + 1), file=save_stdout, ncols=80):
             training = pinned_training_queue.get(block=True)
             training_loss = nnet.train(**training)
             avg_loss.update(training_loss.item())
@@ -194,7 +226,13 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
                 nnet.set_lr(learning_rate)
 
     # sending signal to kill the thread
+    print("[train.py VALUE (before relase())] training_queue", training_queue.qsize(), 
+        "pinned_training_queue", pinned_training_queue.qsize(), 
+        "training_pin_semaphore", training_pin_semaphore._value)
     training_pin_semaphore.release()
+    print("[train.py VALUE (after relase())] training_queue", training_queue.qsize(), 
+        "pinned_training_queue", pinned_training_queue.qsize(), 
+        "training_pin_semaphore", training_pin_semaphore._value)
     # validation_pin_semaphore.release()
 
     # terminating data fetching processes
