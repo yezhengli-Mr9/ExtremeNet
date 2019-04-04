@@ -30,7 +30,6 @@ class kp_module(nn.Module):
 
         curr_dim = dims[0]
         next_dim = dims[1]
-        # print("[exkp.py kp_module __init__] curr_dim", curr_dim, "next_dim", next_dim)
 
         self.up1  = make_up_layer(
             3, curr_dim, curr_dim, curr_mod, 
@@ -65,21 +64,13 @@ class kp_module(nn.Module):
         self.merge = make_merge_layer(curr_dim)
 
     def forward(self, x):
-        print("[exkp.py kp_module forward]----------")
         up1  = self.up1(x)
-        print("[exkp.py kp_module forward] up1", up1.shape)
         max1 = self.max1(x)
-        print("[exkp.py kp_module forward] max1", max1.shape)
         low1 = self.low1(max1)
-        print("[exkp.py kp_module forward] low1", low1.shape)
         low2 = self.low2(low1)
-        print("[exkp.py kp_module forward] low2", low2.shape)
         low3 = self.low3(low2)
         up2  = self.up2(low3)
-        ret =self.merge(up1, up2)
-        print("[exkp.py kp_module forward] ret", ret.shape)
-        print("[exkp.py kp_module forward]==========")
-        return ret
+        return self.merge(up1, up2)
 
 class exkp(nn.Module):
     def __init__(
@@ -117,9 +108,6 @@ class exkp(nn.Module):
                 make_merge_layer=make_merge_layer
             ) for _ in range(nstack)
         ])
-        #------
-        # print("[exkp.py exkp __init__] self.kps", self.kps)
-#         #------
         self.cnvs = nn.ModuleList([
             make_cnv_layer(curr_dim, cnv_dim) for _ in range(nstack)
         ])
