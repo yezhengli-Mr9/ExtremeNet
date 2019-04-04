@@ -60,7 +60,7 @@ class residual(nn.Module):
         skip  = self.skip(x)
         return self.relu(bn2 + skip)
 
-def make_layer(k, inp_dim, out_dim, modules, layer=convolution, **kwargs):
+def make_layer(k, inp_dim, out_dim, modules, layer, **kwargs):#layer=convolution
     layers = [layer(k, inp_dim, out_dim, **kwargs)]
     for _ in range(1, modules):
         layers.append(layer(k, out_dim, out_dim, **kwargs))

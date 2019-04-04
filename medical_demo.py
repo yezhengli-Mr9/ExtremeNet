@@ -93,14 +93,13 @@ if __name__ == "__main__":
     train_split = system_configs.train_split
     dataset = system_configs.dataset
     training_db = datasets[dataset](configs["db"], train_split)
-    nnet = NetworkFactory(training_db)
+    nnet = NetworkFactory(training_db, configs["cuda_flag"])
     print("loading parameters...")
     nnet.load_pretrained_params(args.model_path)
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and  configs["cuda_flag"]:
         nnet.cuda()
     nnet.eval_mode()
 
-    print("[mecical_demo] nnet.features._modules.items()", nnet.features._modules.items())
     K             = configs["db"]["top_k"]
     aggr_weight   = configs["db"]["aggr_weight"]
     scores_thresh = configs["db"]["scores_thresh"]
@@ -141,9 +140,9 @@ if __name__ == "__main__":
     #     "os.path.isdir(args.demo)", os.path.isdir(args.demo),"args", args)
     for image_id in tqdm.tqdm(range(len(image_names))):
         image_name  = image_names[image_id]
-        print("image_name.split('.')[-2][-6:]", image_name.split('.')[-2][-6:])
-        if 1310 >= int(image_name.split('.')[-2][-6:]):
-            continue
+        # print("image_name.split('.')[-2][-6:]", image_name.split('.')[-2][-6:])
+        # if 1310 >= int(image_name.split('.')[-2][-6:]):
+        #     continue
         print('Running ', image_name)
         image      = cv2.imread(image_name)
 

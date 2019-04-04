@@ -52,8 +52,10 @@ class NetworkFactory(object):
         self.model   = DummyModule(nnet_module.model(db))
         self.loss    = nnet_module.loss # yezheng: this is last line in models/ExtremeNet.py
         self.network = Network(self.model, self.loss)
-        self.network = DataParallel(self.network, chunk_sizes=system_configs.chunk_sizes)
         self.cuda_flag = cuda_flag
+        if self.cuda_flag:
+            self.network = DataParallel(self.network, chunk_sizes=system_configs.chunk_sizes)
+        
 
         total_params = 0
         for params in self.model.parameters():
