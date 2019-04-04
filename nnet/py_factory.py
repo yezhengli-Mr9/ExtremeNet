@@ -141,7 +141,7 @@ class NetworkFactory(object):
         print("loading model from {}".format(cache_file))
         print_log("loading model from {}".format(cache_file), system_configs)
         with open(cache_file, "rb") as f:
-            if torch.cuda.is_available():
+            if torch.cuda.is_available()  and self.cuda_flag:
                 params = torch.load(f)
             else:
                 params = torch.load(f, map_location = 'cpu')
