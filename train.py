@@ -103,7 +103,7 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
     stepsize         = system_configs.stepsize
 
     # getting the size of each database
-    training_size   = len(training_dbs[0].db_inds)
+    training_size   = len(training_dbs[0].db_inds)#yezheng: this is not used
     # validation_size = len(validation_db.db_inds)
 
     # queues storing data for training
@@ -115,12 +115,18 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
     # pinned_validation_queue = queue.Queue(5)
 
     # load data sampling function
-    data_file   = "sample.{}".format(training_dbs[0].data)
-    sample_data = importlib.import_module(data_file).sample_data
-
+    data_file   = "sample.{}".format(training_dbs[0].data) #yezheng: sample.medical_extreme
+    sample_data = importlib.import_module(data_file).sample_data #yezheng: this is a function: globals()[system_configs.sampling_function](db, k_ind, data_aug, debug) -- from sample/medical_extreme.py
+    print("[train.py train] sample_data", sample_data)
     # allocating resources for parallel reading
-    training_tasks   = init_parallel_jobs(
-        training_dbs, training_queue, sample_data, True, debug)
+    if configs["cuda_flag"]:
+        training_tasks   = init_parallel_jobs(
+            training_dbs, training_queue, sample_data, True, debug)
+    else:
+        # training_tasks = []
+        # for db in training_dbs:
+        #     training_tasks.append(prefetch_data(db, training_queue, sample_data, True, debug))
+        pass 
     # if val_iter:
     #     validation_tasks = init_parallel_jobs([validation_db], validation_queue, sample_data, False)
 
@@ -152,7 +158,7 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
     # pinned_training_queue <class 'queue.Queue'> 
     # training_pin_semaphore <class 'threading.Semaphore'>
     #-----------
-    if False:
+    if configs["cuda_flag"]:
         training_pin_args   = (training_queue, pinned_training_queue, training_pin_semaphore)
         training_pin_thread = threading.Thread(target=pin_memory, args=training_pin_args)
         training_pin_thread.daemon = True
@@ -195,7 +201,13 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
     avg_loss = AverageMeter()
     with stdout_to_tqdm() as save_stdout:
         for iteration in tqdm.tqdm(range(start_iter + 1, max_iteration + 1), file=save_stdout, ncols=80):
-            training = pinned_training_queue.get(block=True)
+            # print("[train.py train] pinned_training_queue",pinned_training_queue.qsize())
+            if configs["cuda_flag"]:
+                training = pinned_training_queue.get(block=True) #yezheng: get stuck here
+            else:
+                training, ind =sample_data(training_dbs[0], iteration % training_size, data_aug=True, debug=debug)
+                del ind
+            # print("[train.py train] training",training)
             training_loss = nnet.train(**training)
             avg_loss.update(training_loss.item())
 
@@ -226,18 +238,19 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
                 nnet.set_lr(learning_rate)
 
     # sending signal to kill the thread
-    print("[train.py VALUE (before relase())] training_queue", training_queue.qsize(), 
-        "pinned_training_queue", pinned_training_queue.qsize(), 
-        "training_pin_semaphore", training_pin_semaphore._value)
-    training_pin_semaphore.release()
-    print("[train.py VALUE (after relase())] training_queue", training_queue.qsize(), 
-        "pinned_training_queue", pinned_training_queue.qsize(), 
-        "training_pin_semaphore", training_pin_semaphore._value)
+    # print("[train.py VALUE (before relase())] training_queue", training_queue.qsize(), 
+    #     "pinned_training_queue", pinned_training_queue.qsize(), 
+    #     "training_pin_semaphore", training_pin_semaphore._value)
+    # training_pin_semaphore.release()
+    # print("[train.py VALUE (after relase())] training_queue", training_queue.qsize(), 
+    #     "pinned_training_queue", pinned_training_queue.qsize(), 
+    #     "training_pin_semaphore", training_pin_semaphore._value)
     # validation_pin_semaphore.release()
 
     # terminating data fetching processes
-    for training_task in training_tasks:
-        training_task.terminate()
+    if configs["cuda_flag"]:
+        for training_task in training_tasks:
+            training_task.terminate()
     # for validation_task in validation_tasks:
     #     validation_task.terminate()
 
