@@ -13,13 +13,12 @@ matplotlib.use("Agg")
 
 from config import system_configs
 from nnet.py_factory import NetworkFactory
-
-from config import system_configs
 from utils import crop_image, normalize_
 from external.nms import soft_nms_with_points as soft_nms
 from utils.color_map import colormap
 from utils.visualize import vis_mask, vis_octagon, vis_ex, vis_class, vis_bbox
 from dextr import Dextr
+from db.datasets import datasets
 
 torch.backends.cudnn.benchmark = False
 
@@ -46,7 +45,7 @@ def parse_args():
     parser.add_argument("--cfg_file", help="config file", 
                         default='ExtremeNet', type=str)
     parser.add_argument("--demo", help="demo image path or folders",
-                        default="images", type=str)
+                        default="data/coco/train2017", type=str)
     parser.add_argument("--model_path",
                         default='cache/ExtremeNet_250000.pkl')
     parser.add_argument("--show_mask", action='store_true',
@@ -99,13 +98,19 @@ if __name__ == "__main__":
     system_configs.update_config(configs["system"])
     print("system config...")
     pprint.pprint(system_configs.full)
-    
     print("loading parameters: {}".format(args.model_path))
     print("building neural network...")
-    nnet = NetworkFactory(None)
+    #=======
+    train_split = system_configs.train_split
+    dataset = system_configs.dataset
+    training_db = datasets[dataset](configs["db"], train_split)
+    print("[demo.py] training_db", training_db)
+    nnet = NetworkFactory(training_db, configs["cuda_flag"])
+    #=======
     print("loading parameters...")
     nnet.load_pretrained_params(args.model_path)
-    nnet.cuda()
+    if configs['cuda_flag']:
+        nnet.cuda()
     nnet.eval_mode()
 
     K             = configs["db"]["top_k"]

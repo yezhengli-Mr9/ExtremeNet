@@ -1,3 +1,5 @@
+#-----
+#yezheng: this file (exkp.py) is in ExtremeNet but not CornerNet -- it inherits kp.py in CornerNet
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,70 +9,81 @@ from .utils import make_layer, make_layer_revr
 
 from .kp_utils import _tranpose_and_gather_feat, _exct_decode
 from .kp_utils import _sigmoid, _regr_loss, _neg_loss
-from .kp_utils import make_kp_layer
-from .kp_utils import make_pool_layer, make_unpool_layer
+from .kp_utils import make_kp_layer, make_hg_layer #hg = hourglass
 from .kp_utils import make_merge_layer, make_inter_layer, make_cnv_layer
 from .kp_utils import _h_aggregate, _v_aggregate
 from utils.debugger import Debugger
 
+
+
 class kp_module(nn.Module):
     def __init__(
         self, n, dims, modules, layer=residual,
-        make_up_layer=make_layer, make_low_layer=make_layer,
-        make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
-        make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
+        make_up_layer=make_layer, make_low_layer=make_layer,#make_hg_layer_revr=make_layer_revr, #make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
         make_merge_layer=make_merge_layer, **kwargs
     ):
         super(kp_module, self).__init__()
 
         self.n   = n
-
         curr_mod = modules[0]
         next_mod = modules[1]
 
         curr_dim = dims[0]
         next_dim = dims[1]
+        # print("[exkp.py kp_module __init__] curr_dim", curr_dim, "next_dim", next_dim)
 
         self.up1  = make_up_layer(
             3, curr_dim, curr_dim, curr_mod, 
             layer=layer, **kwargs
         )  
-        self.max1 = make_pool_layer(curr_dim)
+        self.max1 = nn.Sequential()
         self.low1 = make_hg_layer(
             3, curr_dim, next_dim, curr_mod,
             layer=layer, **kwargs
         )
-        self.low2 = kp_module(
-            n - 1, dims[1:], modules[1:], layer=layer, 
-            make_up_layer=make_up_layer, 
-            make_low_layer=make_low_layer,
-            make_hg_layer=make_hg_layer,
-            make_hg_layer_revr=make_hg_layer_revr,
-            make_pool_layer=make_pool_layer,
-            make_unpool_layer=make_unpool_layer,
-            make_merge_layer=make_merge_layer,
-            **kwargs
-        ) if self.n > 1 else \
-        make_low_layer(
-            3, next_dim, next_dim, next_mod,
-            layer=layer, **kwargs
-        )
-        self.low3 = make_hg_layer_revr(
+        self.low2 = None
+        
+        if self.n > 1:
+            self.low2 = kp_module(
+                n - 1, dims[1:], modules[1:], layer=layer, 
+                make_up_layer=make_up_layer, 
+                make_low_layer=make_low_layer,
+                make_merge_layer=make_merge_layer,
+                **kwargs
+            )  
+
+        else:
+            self.low2 = make_low_layer(
+                3, next_dim, next_dim, next_mod,
+                layer=layer, **kwargs
+            )
+
+        self.low3 = make_layer_revr(
             3, next_dim, curr_dim, curr_mod,
             layer=layer, **kwargs
         )
-        self.up2  = make_unpool_layer(curr_dim)
-
+        self.up2 = nn.Upsample(scale_factor=2)
         self.merge = make_merge_layer(curr_dim)
 
     def forward(self, x):
+        exkp_flag = False
+
+        if exkp_flag:print("[exkp.py kp_module forward] x", x.shape)
+        if exkp_flag:print("[exkp.py kp_module forward]----------")
         up1  = self.up1(x)
+        if exkp_flag:print("[exkp.py kp_module forward] up1", up1.shape)
         max1 = self.max1(x)
+        if exkp_flag:print("[exkp.py kp_module forward] max1", max1.shape)
         low1 = self.low1(max1)
+        if exkp_flag:print("[exkp.py kp_module forward] low1", low1.shape)
         low2 = self.low2(low1)
+        if exkp_flag:print("[exkp.py kp_module forward] low2", low2.shape)
         low3 = self.low3(low2)
         up2  = self.up2(low3)
-        return self.merge(up1, up2)
+        ret =self.merge(up1, up2)
+        if exkp_flag:print("[exkp.py kp_module forward] ret", ret.shape)
+        if exkp_flag:print("[exkp.py kp_module forward]==========")
+        return ret
 
 class exkp(nn.Module):
     def __init__(
@@ -79,8 +92,6 @@ class exkp(nn.Module):
         make_cnv_layer=make_cnv_layer, make_heat_layer=make_kp_layer,
         make_tag_layer=make_kp_layer, make_regr_layer=make_kp_layer,
         make_up_layer=make_layer, make_low_layer=make_layer, 
-        make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
-        make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
         make_merge_layer=make_merge_layer, make_inter_layer=make_inter_layer, 
         kp_layer=residual
     ):
@@ -101,10 +112,6 @@ class exkp(nn.Module):
                 n, dims, modules, layer=kp_layer,
                 make_up_layer=make_up_layer,
                 make_low_layer=make_low_layer,
-                make_hg_layer=make_hg_layer,
-                make_hg_layer_revr=make_hg_layer_revr,
-                make_pool_layer=make_pool_layer,
-                make_unpool_layer=make_unpool_layer,
                 make_merge_layer=make_merge_layer
             ) for _ in range(nstack)
         ])
@@ -175,21 +182,21 @@ class exkp(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
     def _train(self, *xs):
+        # print("[exkp.py exkp _train] xs", len(xs))
         image  = xs[0]
-        t_inds = xs[1]
-        l_inds = xs[2]
-        b_inds = xs[3]
-        r_inds = xs[4]
 
         inter = self.pre(image)
         outs  = []
-
         layers = zip(
             self.kps, self.cnvs,
             self.t_heats, self.l_heats, self.b_heats, self.r_heats,
             self.ct_heats,
             self.t_regrs, self.l_regrs, self.b_regrs, self.r_regrs,
         )
+        t_inds = xs[1] #t_tags in medical_extreme.py kp_detection(
+        l_inds = xs[2] 
+        b_inds = xs[3]
+        r_inds = xs[4]
         for ind, layer in enumerate(layers):
             kp_, cnv_          = layer[0:2]
             t_heat_, l_heat_, b_heat_, r_heat_ = layer[2:6]
@@ -218,9 +225,14 @@ class exkp(nn.Module):
                 inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
                 inter = self.relu(inter)
                 inter = self.inters[ind](inter)
+        # print("[exkp.py exkp _train] outs", len(outs),type(outs)) # 18 <class 'list'>
         return outs
 
     def _test(self, *xs, **kwargs):
+        print("[exkp.py exkp _test] xs", len(xs))
+        for x in xs:
+            print("[exkp.py exkp _test] x", x.shape)
+
         image = xs[0]
 
         inter = self.pre(image)
@@ -256,6 +268,7 @@ class exkp(nn.Module):
                 inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
                 inter = self.relu(inter)
                 inter = self.inters[ind](inter)
+        print("[exkp.py exkp _test] kwargs['debug']", kwargs['debug'], "kwargs", kwargs)
         if kwargs['debug']:
             _debug(image, t_heat, l_heat, b_heat, r_heat, ct_heat)
         del kwargs['debug']
@@ -266,7 +279,7 @@ class exkp(nn.Module):
             return self._train(*xs, **kwargs)
         return self._test(*xs, **kwargs)
 
-class CTLoss(nn.Module):
+class CTLoss(nn.Module):#yezheng: 
     def __init__(self, regr_weight=1, focal_loss=_neg_loss):
         super(CTLoss, self).__init__()
 
@@ -327,7 +340,7 @@ class CTLoss(nn.Module):
         return loss.unsqueeze(0)
 
 def _debug(image, t_heat, l_heat, b_heat, r_heat, ct_heat):
-    debugger = Debugger(num_classes=80)
+    debugger = Debugger(num_classes=3)
     k = 0
 
     t_heat = torch.sigmoid(t_heat)
@@ -338,6 +351,7 @@ def _debug(image, t_heat, l_heat, b_heat, r_heat, ct_heat):
     
     aggr_weight = 0.1
     t_heat = _h_aggregate(t_heat, aggr_weight=aggr_weight)
+    print("[exkp.py _debug] final t_heat", t_heat.shape)
     l_heat = _v_aggregate(l_heat, aggr_weight=aggr_weight)
     b_heat = _h_aggregate(b_heat, aggr_weight=aggr_weight)
     r_heat = _v_aggregate(r_heat, aggr_weight=aggr_weight)

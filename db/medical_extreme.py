@@ -38,8 +38,8 @@ class medicalExtreme(DETECTION):
             self._label_file = self._label_file.format(self._dataset)
 
         self._image_dir  = os.path.join(self._medical_dir,  self._dataset)#self._image
-        self._image_file = '{}'#os.path.join(self._image_dir, "{}")#yezheng: this is practically useless 
-        print("[medicalExtreme] self._image_file", self._image_file)
+        self._image_file = '{}' #os.path.join(self._image_dir, "{}")#yezheng: this is practically useless 
+        # print("[medicalExtreme] self._image_file", self._image_file, "self._image_dir", self._image_dir)
         self._data = "medical_extreme"
         self._mean = np.array([0.40789654, 0.44719302, 0.47026115],
                               dtype=np.float32)
@@ -91,7 +91,7 @@ class medicalExtreme(DETECTION):
                 self._extreme_pts = pickle.load(f)
 
     def _load_coco_data(self):
-        print("[_load_coco_data] self._label_file", self._label_file)
+        # print("[_load_coco_data] self._label_file", self._label_file)
         self._coco = COCO(self._label_file)
         with open(self._label_file, "r") as f:
             data = json.load(f)

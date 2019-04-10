@@ -75,10 +75,7 @@ def pin_memory(data_queue, pinned_data_queue, sema):
 
         pinned_data_queue.put(data)
 
-        print("[train.py pin_memory VALUE] training_queue", training_queue.qsize(), 
-        "pinned_training_queue", pinned_training_queue.qsize(), 
-        "training_pin_semaphore", training_pin_semaphore._value)
-
+        
         if sema.acquire(blocking=False):
             return
 
@@ -133,6 +130,9 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
     training_pin_semaphore   = threading.Semaphore()
     # validation_pin_semaphore = threading.Semaphore()
     training_pin_semaphore.acquire()
+
+
+    
 
     # validation_pin_semaphore.acquire()
     
@@ -209,6 +209,7 @@ def train(training_dbs, validation_db, start_iter=0, debug=False):
                 del ind
             # print("[train.py train] training",training)
             training_loss = nnet.train(**training)
+            print("[train.py train] training_loss",training_loss)#this is a scalar tensor
             avg_loss.update(training_loss.item())
 
             if display and iteration % display == 0:

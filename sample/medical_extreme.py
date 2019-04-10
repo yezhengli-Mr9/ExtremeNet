@@ -1,4 +1,4 @@
-import cv2
+import cv2, sys
 import math
 import numpy as np
 import torch
@@ -88,7 +88,10 @@ def kp_detection(db, k_ind, data_aug, debug):
 
         # reading image
         # print("[kp_detection] db_ind", db_ind, "db.image_file", db.image_file)
-        image_file = db.image_file(db_ind)
+        if 'linux' == sys.platform:
+            image_file = db.image_file(db_ind)
+        else:
+            image_file = db.image_file(db_ind)
         # print("[kp_detection] image_file", image_file)
         image  = cv2.imread(image_file)
 
@@ -258,8 +261,9 @@ def kp_detection(db, k_ind, data_aug, debug):
             l_regrs[b_ind, tag_ind, :] = [fxl - xl, fyl - yl]
             b_regrs[b_ind, tag_ind, :] = [fxb - xb, fyb - yb]
             r_regrs[b_ind, tag_ind, :] = [fxr - xr, fyr - yr]
-            t_tags[b_ind, tag_ind] = yt * output_size[1] + xt
-            l_tags[b_ind, tag_ind] = yl * output_size[1] + xl
+            #xt, yt are current/ rough ones
+            t_tags[b_ind, tag_ind] = yt * output_size[1] + xt #yezheng: why they need to do this? -- from CornerNet
+            l_tags[b_ind, tag_ind] = yl * output_size[1] + xl 
             b_tags[b_ind, tag_ind] = yb * output_size[1] + xb
             r_tags[b_ind, tag_ind] = yr * output_size[1] + xr
             ct_tags[b_ind, tag_ind] = yct * output_size[1] + xct

@@ -149,7 +149,7 @@ if '__main__' == __name__:
 		img_origin = cv2.imread(os.path.join(img_origin_directory, 
 			"{:06d}.jpg".format(index) ) )
 		if None is img_origin:
-			mask_directory = "/Users/yezheng/medical_img/data/test/img"
+			img_origin_directory = "/Users/yezheng/medical_img/data/test/img"
 			img_origin = cv2.imread(os.path.join(img_origin_directory, 
 			"{:06d}.jpg".format(index) ) )
 		data_extreme["images"].append({"file_name":os.path.join(img_origin_directory, 

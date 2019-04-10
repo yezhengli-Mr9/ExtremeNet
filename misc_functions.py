@@ -32,22 +32,22 @@ def convert_to_grayscale(im_as_arr):
     return grayscale_im
 
 
-def save_gradient_images(gradient, file_name):
-    """
-        Exports the original gradient image
+# def save_gradient_images(gradient, file_name):
+#     """
+#         Exports the original gradient image
 
-    Args:
-        gradient (np arr): Numpy array of the gradient with shape (3, 224, 224)
-        file_name (str): File name to be exported
-    """
-    if not os.path.exists('../results'):
-        os.makedirs('../results')
-    # Normalize
-    gradient = gradient - gradient.min()
-    gradient /= gradient.max()
-    # Save image
-    path_to_file = os.path.join('../results', file_name + '.jpg')
-    save_image(gradient, path_to_file)
+#     Args:
+#         gradient (np arr): Numpy array of the gradient with shape (3, 224, 224)
+#         file_name (str): File name to be exported
+#     """
+#     if not os.path.exists('../results'):
+#         os.makedirs('../results')
+#     # Normalize
+#     gradient = gradient - gradient.min()
+#     gradient /= gradient.max()
+#     # Save image
+#     path_to_file = os.path.join('../results', file_name + '.jpg')
+#     save_image(gradient, path_to_file)
 
 
 def save_class_activation_images(org_img, activation_map, file_name):
@@ -59,23 +59,27 @@ def save_class_activation_images(org_img, activation_map, file_name):
         activation_map (numpy arr): Activation map (grayscale) 0-255
         file_name (str): File name of the exported image
     """
-    if not os.path.exists('../results'):
-        os.makedirs('../results')
+
+    # if not os.path.exists('../results'):
+    #     os.makedirs('../results')
     # Grayscale activation map
     heatmap, heatmap_on_image = apply_colormap_on_image(org_img, activation_map, 'hsv')
     # Save colored heatmap
-    path_to_file = os.path.join('../results', file_name+'_Cam_Heatmap.png')
-    print(np.max(heatmap))
+    split_filename_list = file_name.split('/')
+    # print("split_filename_list", split_filename_list)
+    # print('''split_filename_list[:-1]+ ['Cam_Heatmap_'+split_filename_list[-1]+'.png']''', split_filename_list[:-1]+ ['Cam_Heatmap_'+split_filename_list[-1]+'.png'])
+    path_to_file = '/'.join(split_filename_list[:-1]+ ['Cam_Heatmap_'+split_filename_list[-1]+'.png'])
+    # print(np.max(heatmap))
     save_image(heatmap, path_to_file)
     # Save heatmap on iamge
-    print()
-    print(np.max(heatmap_on_image))
-    path_to_file = os.path.join('../results', file_name+'_Cam_On_Image.png')
+    # print()
+    # print(np.max(heatmap_on_image))
+    path_to_file = '/'.join(split_filename_list[:-1]+ ['Cam_On_Image_'+split_filename_list[-1]+'.png'])
     save_image(heatmap_on_image, path_to_file)
     # SAve grayscale heatmap
-    print()
-    print(np.max(activation_map))
-    path_to_file = os.path.join('../results', file_name+'_Cam_Grayscale.png')
+    # print()
+    # print(np.max(activation_map))
+    path_to_file = '/'.join(split_filename_list[:-1]+ ['Cam_Grayscale_'+split_filename_list[-1]+'.png'])
     save_image(activation_map, path_to_file)
 
 
@@ -115,15 +119,15 @@ def save_image(im, path):
     if isinstance(im, np.ndarray):
         if len(im.shape) == 2:
             im = np.expand_dims(im, axis=0)
-            print('A')
-            print(im.shape)
+            # print('A')
+            # print(im.shape)
         if im.shape[0] == 1:
             # Converting an image with depth = 1 to depth = 3, repeating the same values
             # For some reason PIL complains when I want to save channel image as jpg without
             # additional format in the .save()
-            print('B')
+            # print('B')
             im = np.repeat(im, 3, axis=0)
-            print(im.shape)
+            # print(im.shape)
             # Convert to values to range 1-255 and W,H, D
         # A bandaid fix to an issue with gradcam
         if im.shape[0] == 3 and np.max(im) == 1:

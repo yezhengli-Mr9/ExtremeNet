@@ -16,21 +16,6 @@ class convolution(nn.Module):
         relu = self.relu(bn)
         return relu
 
-class fully_connected(nn.Module):
-    def __init__(self, inp_dim, out_dim, with_bn=True):
-        super(fully_connected, self).__init__()
-        self.with_bn = with_bn
-
-        self.linear = nn.Linear(inp_dim, out_dim)
-        if self.with_bn:
-            self.bn = nn.BatchNorm1d(out_dim)
-        self.relu   = nn.ReLU(inplace=True)
-
-    def forward(self, x):
-        linear = self.linear(x)
-        bn     = self.bn(linear) if self.with_bn else linear
-        relu   = self.relu(bn)
-        return relu
 
 class residual(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_bn=True):
@@ -59,6 +44,25 @@ class residual(nn.Module):
 
         skip  = self.skip(x)
         return self.relu(bn2 + skip)
+
+
+
+class fully_connected(nn.Module):
+    def __init__(self, inp_dim, out_dim, with_bn=True):
+        super(fully_connected, self).__init__()
+        self.with_bn = with_bn
+
+        self.linear = nn.Linear(inp_dim, out_dim)
+        if self.with_bn:
+            self.bn = nn.BatchNorm1d(out_dim)
+        self.relu   = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        linear = self.linear(x)
+        bn     = self.bn(linear) if self.with_bn else linear
+        relu   = self.relu(bn)
+        return relu
+
 
 def make_layer(k, inp_dim, out_dim, modules, layer, **kwargs):#layer=convolution
     layers = [layer(k, inp_dim, out_dim, **kwargs)]

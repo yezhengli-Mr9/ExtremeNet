@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument("--demo", help="demo image path or folders",
                         default="data/medical_img/test2017", type=str)
     parser.add_argument("--model_path",
-                        default='cache/nnet/medical_ExtremeNet/medical_ExtremeNet_26000.pkl')
+                        default='cache/nnet/medical_ExtremeNet/medical_ExtremeNet_27600.pkl')
     parser.add_argument("--show_mask", action='store_true',
                         help="Run Deep extreme cut to obtain accurate mask")
 
@@ -135,7 +135,14 @@ if __name__ == "__main__":
             if ext in image_ext:
                 image_names.append(os.path.join(args.demo, file_name))
     else:
-        image_names = [args.demo]
+        args.demo = "../../medical_img/data/test/img"
+        image_names = []
+        ls = os.listdir(args.demo)
+        # print("os.listdir(args.demo)", ls)
+        for file_name in sorted(ls):
+            ext = file_name[file_name.rfind('.') + 1:].lower()
+            if ext in image_ext:
+                image_names.append(os.path.join(args.demo, file_name))
     # print("[demo] image_names", image_names, "args.demo", args.demo,
     #     "os.path.isdir(args.demo)", os.path.isdir(args.demo),"args", args)
     for image_id in tqdm.tqdm(range(len(image_names))):
@@ -144,6 +151,7 @@ if __name__ == "__main__":
         # if 1310 >= int(image_name.split('.')[-2][-6:]):
         #     continue
         print('Running ', image_name)
+        
         image      = cv2.imread(image_name)
 
         height, width = image.shape[0:2]

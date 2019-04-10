@@ -27,6 +27,8 @@ class Network(nn.Module):
 
     def forward(self, xs, ys, **kwargs):
         preds = self.model(*xs, **kwargs)
+        # print("[Network forward] preds", len(preds), "ys", len(ys))
+        # [Network forward] preds 18 ys 10
         loss  = self.loss(preds, ys, **kwargs)
         return loss
 

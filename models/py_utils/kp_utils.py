@@ -10,17 +10,15 @@ class MergeUp(nn.Module):
 def make_merge_layer(dim):
     return MergeUp()
 
+def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
+    layers  = [layer(kernel, dim0, dim1, stride=2)]
+    layers += [layer(kernel, dim1, dim1) for _ in range(mod - 1)]
+    return nn.Sequential(*layers)
 def make_tl_layer(dim):
     return None
 
 def make_br_layer(dim):
     return None
-
-def make_pool_layer(dim):
-    return nn.MaxPool2d(kernel_size=2, stride=2)
-
-def make_unpool_layer(dim):
-    return nn.Upsample(scale_factor=2)
 
 def make_kp_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
@@ -35,16 +33,29 @@ def make_cnv_layer(inp_dim, out_dim):
     return convolution(3, inp_dim, out_dim)
 
 def _gather_feat(feat, ind, mask=None):
+    # print("[kp_utils.py _gather_feat] feat (before)", feat.shape, "ind", ind.shape,ind)
     dim  = feat.size(2)
     ind  = ind.unsqueeze(2).expand(ind.size(0), ind.size(1), dim)
-    feat = feat.gather(1, ind)
+    feat = feat.gather(1, ind) #yezheng: what does this mean?
+    # print("[kp_utils.py _gather_feat] feat (after)", feat.shape, "ind", ind.shape, ind, feat)
+#-------
+# when training
+# [kp_utils.py _gather_feat] feat (before)
+# torch.Size([5, 16384, 2]) ind torch.Size([5, 128])
+# [kp_utils.py _gather_feat] feat (after)
+# torch.Size([5, 128, 2]) ind torch.Size([5, 128, 2])
+#-------
     if mask is not None:
         mask = mask.unsqueeze(2).expand_as(feat)
         feat = feat[mask]
         feat = feat.view(-1, dim)
     return feat
 
-def _nms(heat, kernel=1):
+def _nms(heat, kernel=1): #yezheng: _nms is not the thing mentioned in 
+# cd $ExtremeNet_ROOT/external
+# make
+# ?
+#yezheng: this also appears in CornerNet
     pad = (kernel - 1) // 2
 
     hmax = nn.functional.max_pool2d(heat, (kernel, kernel), stride=1, padding=pad)
@@ -110,9 +121,15 @@ def _v_aggregate(heat, aggr_weight=0.1):
            aggr_weight * _bottom_aggregate(heat) + heat
 
 def _tranpose_and_gather_feat(feat, ind):
+    # print("[kp_utils.py _tranpose_and_gather_feat] feat (before)", feat.shape,feat)
+    # [kp_utils.py _tranpose_and_gather_feat] feat (before)
+    # torch.Size([5, 2, 128, 128])
     feat = feat.permute(0, 2, 3, 1).contiguous()
     feat = feat.view(feat.size(0), -1, feat.size(3))
     feat = _gather_feat(feat, ind)
+    # print("[kp_utils.py _tranpose_and_gather_feat] feat (after)", feat.shape,feat)
+    # [kp_utils.py _tranpose_and_gather_feat] feat (after)
+    # torch.Size([5, 128, 2])
     return feat
 
 def _filter(heat, direction, val=0.1):
@@ -150,92 +167,13 @@ def _topk(scores, K=20):
     topk_xs   = (topk_inds % width).int().float()
     return topk_scores, topk_inds, topk_clses, topk_ys, topk_xs
 
-def _decode(
-    tl_heat, br_heat, tl_tag, br_tag, tl_regr, br_regr, 
-    K=100, kernel=1, ae_threshold=1, num_dets=1000
-):
-    batch, cat, height, width = tl_heat.size()
-
-    tl_heat = torch.sigmoid(tl_heat)
-    br_heat = torch.sigmoid(br_heat)
-
-    # perform nms on heatmaps
-    tl_heat = _nms(tl_heat, kernel=kernel)
-    br_heat = _nms(br_heat, kernel=kernel)
-
-    tl_scores, tl_inds, tl_clses, tl_ys, tl_xs = _topk(tl_heat, K=K)
-    br_scores, br_inds, br_clses, br_ys, br_xs = _topk(br_heat, K=K)
-
-    tl_ys = tl_ys.view(batch, K, 1).expand(batch, K, K)
-    tl_xs = tl_xs.view(batch, K, 1).expand(batch, K, K)
-    br_ys = br_ys.view(batch, 1, K).expand(batch, K, K)
-    br_xs = br_xs.view(batch, 1, K).expand(batch, K, K)
-
-    if tl_regr is not None and br_regr is not None:
-        tl_regr = _tranpose_and_gather_feat(tl_regr, tl_inds)
-        tl_regr = tl_regr.view(batch, K, 1, 2)
-        br_regr = _tranpose_and_gather_feat(br_regr, br_inds)
-        br_regr = br_regr.view(batch, 1, K, 2)
-
-        tl_xs = tl_xs + tl_regr[..., 0]
-        tl_ys = tl_ys + tl_regr[..., 1]
-        br_xs = br_xs + br_regr[..., 0]
-        br_ys = br_ys + br_regr[..., 1]
-
-    # all possible boxes based on top k corners (ignoring class)
-    bboxes = torch.stack((tl_xs, tl_ys, br_xs, br_ys), dim=3)
-
-    tl_tag = _tranpose_and_gather_feat(tl_tag, tl_inds)
-    tl_tag = tl_tag.view(batch, K, 1)
-    br_tag = _tranpose_and_gather_feat(br_tag, br_inds)
-    br_tag = br_tag.view(batch, 1, K)
-    dists  = torch.abs(tl_tag - br_tag)
-
-    tl_scores = tl_scores.view(batch, K, 1).expand(batch, K, K)
-    br_scores = br_scores.view(batch, 1, K).expand(batch, K, K)
-    scores    = (tl_scores + br_scores) / 2
-
-    # reject boxes based on classes
-    tl_clses = tl_clses.view(batch, K, 1).expand(batch, K, K)
-    br_clses = br_clses.view(batch, 1, K).expand(batch, K, K)
-    cls_inds = (tl_clses != br_clses)
-
-    # reject boxes based on distances
-    dist_inds = (dists > ae_threshold)
-
-    # reject boxes based on widths and heights
-    width_inds  = (br_xs < tl_xs)
-    height_inds = (br_ys < tl_ys)
-
-    scores[cls_inds]    = -1
-    scores[dist_inds]   = -1
-    scores[width_inds]  = -1
-    scores[height_inds] = -1
-
-    scores = scores.view(batch, -1)
-    scores, inds = torch.topk(scores, num_dets)
-    scores = scores.unsqueeze(2)
-
-    bboxes = bboxes.view(batch, -1, 4)
-    bboxes = _gather_feat(bboxes, inds)
-
-    clses  = tl_clses.contiguous().view(batch, -1, 1)
-    clses  = _gather_feat(clses, inds).float()
-
-    tl_scores = tl_scores.contiguous().view(batch, -1, 1)
-    tl_scores = _gather_feat(tl_scores, inds).float()
-    br_scores = br_scores.contiguous().view(batch, -1, 1)
-    br_scores = _gather_feat(br_scores, inds).float()
-
-    detections = torch.cat([bboxes, scores, tl_scores, br_scores, clses], dim=2)
-    return detections
-
 def _exct_decode(
     t_heat, l_heat, b_heat, r_heat, ct_heat, 
     t_regr, l_regr, b_regr, r_regr,
     K=40, kernel=3, 
     aggr_weight=0.1, scores_thresh=0.1, center_thresh=0.1,num_dets=1000
 ):
+
     batch, cat, height, width = t_heat.size()
     
     ''' 
@@ -245,7 +183,7 @@ def _exct_decode(
     b_heat = _filter(b_heat, direction='h', val=filter_kernel)
     r_heat = _filter(r_heat, direction='v', val=filter_kernel)
     '''
-
+    # yezheng: what does this K mean?
     t_heat = torch.sigmoid(t_heat)
     l_heat = torch.sigmoid(l_heat)
     b_heat = torch.sigmoid(b_heat)
@@ -274,7 +212,7 @@ def _exct_decode(
     l_scores, l_inds, l_clses, l_ys, l_xs = _topk(l_heat, K=K)
     b_scores, b_inds, b_clses, b_ys, b_xs = _topk(b_heat, K=K)
     r_scores, r_inds, r_clses, r_ys, r_xs = _topk(r_heat, K=K)
-
+    #yezheng: these ares just creating meshes
     t_ys = t_ys.view(batch, K, 1, 1, 1).expand(batch, K, K, K, K)
     t_xs = t_xs.view(batch, K, 1, 1, 1).expand(batch, K, K, K, K)
     l_ys = l_ys.view(batch, 1, K, 1, 1).expand(batch, K, K, K, K)
@@ -378,7 +316,7 @@ def _exct_decode(
     clses  = _gather_feat(clses, inds).float()
 
     t_xs = t_xs.contiguous().view(batch, -1, 1)
-    t_xs = _gather_feat(t_xs, inds).float()
+    t_xs = _gather_feat(t_xs, inds).float() #yezheng: this function is fairly important _gather_feat
     t_ys = t_ys.contiguous().view(batch, -1, 1)
     t_ys = _gather_feat(t_ys, inds).float()
     l_xs = l_xs.contiguous().view(batch, -1, 1)
@@ -397,6 +335,7 @@ def _exct_decode(
 
     detections = torch.cat([bboxes, scores, t_xs, t_ys, l_xs, l_ys, 
                             b_xs, b_ys, r_xs, r_ys, clses], dim=2)
+    print("[kp_utils.py _exct_decode] detections", detections.shape)
 
     return detections
 
@@ -425,9 +364,16 @@ def _neg_loss(preds, gt):
     return loss
 '''
 
+#yezheng: this is the same as the one in CornerNet
 def _neg_loss(preds, gt):
-    pos_inds = gt.eq(1)
-    neg_inds = gt.lt(1)
+    print("[kp_utils.py _neg_loss] preds", len(preds), "gt", len(gt))
+    print("preds[0]",preds[0].shape, "gt[0]", gt[0].shape)
+#     preds[0]
+# torch.Size([5, 3, 128, 128])
+# gt[0]
+# torch.Size([3, 128, 128])
+    pos_inds = gt.eq(1) # equal
+    neg_inds = gt.lt(1) # less than
 
     neg_weights = torch.pow(1 - gt[neg_inds], 4)
 
@@ -494,6 +440,12 @@ def _regr_loss(regr, gt_regr, mask):
 '''
 
 def _regr_loss(regr, gt_regr, mask):
+    # print("[kp_utils _regr_loss] regr", regr.shape, "gt_regr", gt_regr.shape)
+
+#     [kp_utils _regr_loss] regr
+# torch.Size([5, 128, 2])
+# gt_regr
+# torch.Size([5, 128, 2])
     num  = mask.float().sum()
     mask = mask.unsqueeze(2).expand_as(gt_regr)
 
@@ -503,3 +455,85 @@ def _regr_loss(regr, gt_regr, mask):
     regr_loss = nn.functional.smooth_l1_loss(regr, gt_regr, size_average=False)
     regr_loss = regr_loss / (num + 1e-4)
     return regr_loss
+
+
+
+# def _decode(
+#     tl_heat, br_heat, tl_tag, br_tag, tl_regr, br_regr, 
+#     K=100, kernel=1, ae_threshold=1, num_dets=1000
+# ):
+#     batch, cat, height, width = tl_heat.size()
+
+#     tl_heat = torch.sigmoid(tl_heat)
+#     br_heat = torch.sigmoid(br_heat)
+
+#     # perform nms on heatmaps
+#     tl_heat = _nms(tl_heat, kernel=kernel)
+#     br_heat = _nms(br_heat, kernel=kernel)
+
+#     tl_scores, tl_inds, tl_clses, tl_ys, tl_xs = _topk(tl_heat, K=K)
+#     br_scores, br_inds, br_clses, br_ys, br_xs = _topk(br_heat, K=K)
+
+#     tl_ys = tl_ys.view(batch, K, 1).expand(batch, K, K)
+#     tl_xs = tl_xs.view(batch, K, 1).expand(batch, K, K)
+#     br_ys = br_ys.view(batch, 1, K).expand(batch, K, K)
+#     br_xs = br_xs.view(batch, 1, K).expand(batch, K, K)
+
+#     if tl_regr is not None and br_regr is not None:
+#         tl_regr = _tranpose_and_gather_feat(tl_regr, tl_inds)
+#         tl_regr = tl_regr.view(batch, K, 1, 2)
+#         br_regr = _tranpose_and_gather_feat(br_regr, br_inds)
+#         br_regr = br_regr.view(batch, 1, K, 2)
+
+#         tl_xs = tl_xs + tl_regr[..., 0]
+#         tl_ys = tl_ys + tl_regr[..., 1]
+#         br_xs = br_xs + br_regr[..., 0]
+#         br_ys = br_ys + br_regr[..., 1]
+
+#     # all possible boxes based on top k corners (ignoring class)
+#     bboxes = torch.stack((tl_xs, tl_ys, br_xs, br_ys), dim=3)
+
+#     tl_tag = _tranpose_and_gather_feat(tl_tag, tl_inds)
+#     tl_tag = tl_tag.view(batch, K, 1)
+#     br_tag = _tranpose_and_gather_feat(br_tag, br_inds)
+#     br_tag = br_tag.view(batch, 1, K)
+#     dists  = torch.abs(tl_tag - br_tag)
+
+#     tl_scores = tl_scores.view(batch, K, 1).expand(batch, K, K)
+#     br_scores = br_scores.view(batch, 1, K).expand(batch, K, K)
+#     scores    = (tl_scores + br_scores) / 2
+
+#     # reject boxes based on classes
+#     tl_clses = tl_clses.view(batch, K, 1).expand(batch, K, K)
+#     br_clses = br_clses.view(batch, 1, K).expand(batch, K, K)
+#     cls_inds = (tl_clses != br_clses)
+
+#     # reject boxes based on distances
+#     dist_inds = (dists > ae_threshold)
+
+#     # reject boxes based on widths and heights
+#     width_inds  = (br_xs < tl_xs)
+#     height_inds = (br_ys < tl_ys)
+
+#     scores[cls_inds]    = -1
+#     scores[dist_inds]   = -1
+#     scores[width_inds]  = -1
+#     scores[height_inds] = -1
+
+#     scores = scores.view(batch, -1)
+#     scores, inds = torch.topk(scores, num_dets)
+#     scores = scores.unsqueeze(2)
+
+#     bboxes = bboxes.view(batch, -1, 4)
+#     bboxes = _gather_feat(bboxes, inds)
+
+#     clses  = tl_clses.contiguous().view(batch, -1, 1)
+#     clses  = _gather_feat(clses, inds).float()
+
+#     tl_scores = tl_scores.contiguous().view(batch, -1, 1)
+#     tl_scores = _gather_feat(tl_scores, inds).float()
+#     br_scores = br_scores.contiguous().view(batch, -1, 1)
+#     br_scores = _gather_feat(br_scores, inds).float()
+
+#     detections = torch.cat([bboxes, scores, tl_scores, br_scores, clses], dim=2)
+#     return detections
