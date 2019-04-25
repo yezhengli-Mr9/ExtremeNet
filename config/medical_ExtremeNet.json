@@ -1,5 +1,5 @@
 {
-    "cuda_flag":true,
+    "cuda_flag":false,
     "system": {
         "dataset": "medicalExtreme",
         "batch_size": 5,

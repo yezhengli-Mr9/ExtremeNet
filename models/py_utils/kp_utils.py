@@ -366,8 +366,8 @@ def _neg_loss(preds, gt):
 
 #yezheng: this is the same as the one in CornerNet
 def _neg_loss(preds, gt):
-    print("[kp_utils.py _neg_loss] preds", len(preds), "gt", len(gt))
-    print("preds[0]",preds[0].shape, "gt[0]", gt[0].shape)
+    # print("[kp_utils.py _neg_loss] preds", len(preds), "gt", len(gt))
+    # print("preds[0]",preds[0].shape, "gt[0]", gt[0].shape)
 #     preds[0]
 # torch.Size([5, 3, 128, 128])
 # gt[0]
