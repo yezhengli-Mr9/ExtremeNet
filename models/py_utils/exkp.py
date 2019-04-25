@@ -181,103 +181,103 @@ class exkp(nn.Module):
 
         self.relu = nn.ReLU(inplace=True)
 
-    def _train(self, *xs):
-        # print("[exkp.py exkp _train] xs", len(xs))
-        image  = xs[0]
+    # def _train(self, *xs):
+    #     # print("[exkp.py exkp _train] xs", len(xs))
+    #     image  = xs[0]
 
-        inter = self.pre(image)
-        outs  = []
-        layers = zip(
-            self.kps, self.cnvs,
-            self.t_heats, self.l_heats, self.b_heats, self.r_heats,
-            self.ct_heats,
-            self.t_regrs, self.l_regrs, self.b_regrs, self.r_regrs,
-        )
-        t_inds = xs[1] #t_tags in medical_extreme.py kp_detection(
-        l_inds = xs[2] 
-        b_inds = xs[3]
-        r_inds = xs[4]
-        for ind, layer in enumerate(layers):
-            kp_, cnv_          = layer[0:2]
-            t_heat_, l_heat_, b_heat_, r_heat_ = layer[2:6]
-            ct_heat_                           = layer[6]
-            t_regr_, l_regr_, b_regr_, r_regr_ = layer[7:11]
+    #     inter = self.pre(image)
+    #     outs  = []
+    #     layers = zip(
+    #         self.kps, self.cnvs,
+    #         self.t_heats, self.l_heats, self.b_heats, self.r_heats,
+    #         self.ct_heats,
+    #         self.t_regrs, self.l_regrs, self.b_regrs, self.r_regrs,
+    #     )
+    #     t_inds = xs[1] #t_tags in medical_extreme.py kp_detection(
+    #     l_inds = xs[2] 
+    #     b_inds = xs[3]
+    #     r_inds = xs[4]
+    #     for ind, layer in enumerate(layers):
+    #         kp_, cnv_          = layer[0:2]
+    #         t_heat_, l_heat_, b_heat_, r_heat_ = layer[2:6]
+    #         ct_heat_                           = layer[6]
+    #         t_regr_, l_regr_, b_regr_, r_regr_ = layer[7:11]
 
-            kp  = kp_(inter)
-            cnv = cnv_(kp)
+    #         kp  = kp_(inter)
+    #         cnv = cnv_(kp)
 
-            t_heat, l_heat = t_heat_(cnv), l_heat_(cnv)
-            b_heat, r_heat = b_heat_(cnv), r_heat_(cnv)
-            ct_heat        = ct_heat_(cnv)
+    #         t_heat, l_heat = t_heat_(cnv), l_heat_(cnv)
+    #         b_heat, r_heat = b_heat_(cnv), r_heat_(cnv)
+    #         ct_heat        = ct_heat_(cnv)
 
-            t_regr, l_regr = t_regr_(cnv), l_regr_(cnv)
-            b_regr, r_regr = b_regr_(cnv), r_regr_(cnv)
+    #         t_regr, l_regr = t_regr_(cnv), l_regr_(cnv)
+    #         b_regr, r_regr = b_regr_(cnv), r_regr_(cnv)
 
-            t_regr = _tranpose_and_gather_feat(t_regr, t_inds)
-            l_regr = _tranpose_and_gather_feat(l_regr, l_inds)
-            b_regr = _tranpose_and_gather_feat(b_regr, b_inds)
-            r_regr = _tranpose_and_gather_feat(r_regr, r_inds)
+    #         t_regr = _tranpose_and_gather_feat(t_regr, t_inds)
+    #         l_regr = _tranpose_and_gather_feat(l_regr, l_inds)
+    #         b_regr = _tranpose_and_gather_feat(b_regr, b_inds)
+    #         r_regr = _tranpose_and_gather_feat(r_regr, r_inds)
 
-            outs += [t_heat, l_heat, b_heat, r_heat, ct_heat, \
-                     t_regr, l_regr, b_regr, r_regr]
+    #         outs += [t_heat, l_heat, b_heat, r_heat, ct_heat, \
+    #                  t_regr, l_regr, b_regr, r_regr]
 
-            if ind < self.nstack - 1:
-                inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
-                inter = self.relu(inter)
-                inter = self.inters[ind](inter)
-        # print("[exkp.py exkp _train] outs", len(outs),type(outs)) # 18 <class 'list'>
-        return outs
+    #         if ind < self.nstack - 1:
+    #             inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
+    #             inter = self.relu(inter)
+    #             inter = self.inters[ind](inter)
+    #     # print("[exkp.py exkp _train] outs", len(outs),type(outs)) # 18 <class 'list'>
+    #     return outs
 
-    def _test(self, *xs, **kwargs):
-        print("[exkp.py exkp _test] xs", len(xs))
-        for x in xs:
-            print("[exkp.py exkp _test] x", x.shape)
+    # def _test(self, *xs, **kwargs):
+    #     print("[exkp.py exkp _test] xs", len(xs))
+    #     for x in xs:
+    #         print("[exkp.py exkp _test] x", x.shape)
 
-        image = xs[0]
+    #     image = xs[0]
 
-        inter = self.pre(image)
-        outs  = []
+    #     inter = self.pre(image)
+    #     outs  = []
 
-        layers = zip(
-            self.kps, self.cnvs,
-            self.t_heats, self.l_heats, self.b_heats, self.r_heats,
-            self.ct_heats,
-            self.t_regrs, self.l_regrs, self.b_regrs, self.r_regrs,
-        )
-        for ind, layer in enumerate(layers):
-            kp_, cnv_                          = layer[0:2]
-            t_heat_, l_heat_, b_heat_, r_heat_ = layer[2:6]
-            ct_heat_                           = layer[6]
-            t_regr_, l_regr_, b_regr_, r_regr_ = layer[7:11]
+    #     layers = zip(
+    #         self.kps, self.cnvs,
+    #         self.t_heats, self.l_heats, self.b_heats, self.r_heats,
+    #         self.ct_heats,
+    #         self.t_regrs, self.l_regrs, self.b_regrs, self.r_regrs,
+    #     )
+    #     for ind, layer in enumerate(layers):
+    #         kp_, cnv_                          = layer[0:2]
+    #         t_heat_, l_heat_, b_heat_, r_heat_ = layer[2:6]
+    #         ct_heat_                           = layer[6]
+    #         t_regr_, l_regr_, b_regr_, r_regr_ = layer[7:11]
 
-            kp  = kp_(inter)
-            cnv = cnv_(kp)
+    #         kp  = kp_(inter)
+    #         cnv = cnv_(kp)
 
-            if ind == self.nstack - 1:
-                t_heat, l_heat = t_heat_(cnv), l_heat_(cnv)
-                b_heat, r_heat = b_heat_(cnv), r_heat_(cnv)
-                ct_heat        = ct_heat_(cnv)
+    #         if ind == self.nstack - 1:
+    #             t_heat, l_heat = t_heat_(cnv), l_heat_(cnv)
+    #             b_heat, r_heat = b_heat_(cnv), r_heat_(cnv)
+    #             ct_heat        = ct_heat_(cnv)
 
-                t_regr, l_regr = t_regr_(cnv), l_regr_(cnv)
-                b_regr, r_regr = b_regr_(cnv), r_regr_(cnv)
+    #             t_regr, l_regr = t_regr_(cnv), l_regr_(cnv)
+    #             b_regr, r_regr = b_regr_(cnv), r_regr_(cnv)
 
-                outs += [t_heat, l_heat, b_heat, r_heat, ct_heat,
-                         t_regr, l_regr, b_regr, r_regr]
+    #             outs += [t_heat, l_heat, b_heat, r_heat, ct_heat,
+    #                      t_regr, l_regr, b_regr, r_regr]
 
-            if ind < self.nstack - 1:
-                inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
-                inter = self.relu(inter)
-                inter = self.inters[ind](inter)
-        print("[exkp.py exkp _test] kwargs['debug']", kwargs['debug'], "kwargs", kwargs)
-        if kwargs['debug']:
-            _debug(image, t_heat, l_heat, b_heat, r_heat, ct_heat)
-        del kwargs['debug']
-        return self._decode(*outs[-9:], **kwargs)
+    #         if ind < self.nstack - 1:
+    #             inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
+    #             inter = self.relu(inter)
+    #             inter = self.inters[ind](inter)
+    #     print("[exkp.py exkp _test] kwargs['debug']", kwargs['debug'], "kwargs", kwargs)
+    #     if kwargs['debug']:
+    #         _debug(image, t_heat, l_heat, b_heat, r_heat, ct_heat)
+    #     del kwargs['debug']
+    #     return self._decode(*outs[-9:], **kwargs)
 
-    # def forward(self, *xs, **kwargs):
-    #     if len(xs) > 1:
-    #         return self._train(*xs, **kwargs)
-    #     return self._test(*xs, **kwargs)
+    # # def forward(self, *xs, **kwargs):
+    # #     if len(xs) > 1:
+    # #         return self._train(*xs, **kwargs)
+    # #     return self._test(*xs, **kwargs)
 
     def forward(self, *xs, **kwargs):
 
